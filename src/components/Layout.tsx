@@ -42,7 +42,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout } = useAuthStore()
+  const { user, setUser } = useAuthStore()
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -57,17 +57,17 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    setUser(null)
+    navigate('/')
     handleProfileMenuClose()
   }
 
   const menuItems = [
-    { text: 'Dashboard', icon: <Dashboard />, path: '/' },
-    { text: 'My Availability', icon: <Schedule />, path: '/availability' },
-    { text: 'My Shifts', icon: <Person />, path: '/shifts' },
+    { text: 'ראשי', icon: <Dashboard />, path: '/' },
+    { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
+    { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
     ...(user?.role === 'manager'
-      ? [{ text: 'Manager Dashboard', icon: <Settings />, path: '/manager' }]
+      ? [{ text: 'ניהול (למנהל בלבד)', icon: <Settings />, path: '/manager' }]
       : []),
   ]
 
@@ -75,7 +75,7 @@ export default function Layout({ children }: LayoutProps) {
     <div>
       <Toolbar>
         <Typography variant="h6" noWrap component="div">
-          Shifts App
+          ניהול משמרות
         </Typography>
       </Toolbar>
       <List>
@@ -98,7 +98,7 @@ export default function Layout({ children }: LayoutProps) {
   )
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box dir="rtl" sx={{ display: 'flex' }}>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -118,7 +118,7 @@ export default function Layout({ children }: LayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find((item) => item.path === location.pathname)?.text || 'Shifts App'}
+            {menuItems.find((item) => item.path === location.pathname)?.text || 'ניהול משמרות'}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
@@ -189,7 +189,7 @@ export default function Layout({ children }: LayoutProps) {
           <ListItemIcon>
             <Logout fontSize="small" />
           </ListItemIcon>
-          Logout
+          התנתקות
         </MenuItem>
       </Menu>
     </Box>

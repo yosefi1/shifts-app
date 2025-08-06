@@ -1,34 +1,28 @@
-import { Routes, Route } from 'react-router-dom'
-import { Box } from '@mui/material'
-import Layout from './components/Layout'
+import { useAuthStore } from './stores/authStore'
 import Login from './pages/Login'
+import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Availability from './pages/Availability'
 import Shifts from './pages/Shifts'
 import ManagerDashboard from './pages/ManagerDashboard'
-import { useAuthStore } from './stores/authStore'
+import { Routes, Route, Navigate } from 'react-router-dom'
 
-function App() {
-  const { isAuthenticated, user } = useAuthStore()
+export default function App() {
+  const user = useAuthStore((s) => s.user)
 
-  if (!isAuthenticated) {
+  if (!user) {
     return <Login />
   }
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/availability" element={<Availability />} />
-          <Route path="/shifts" element={<Shifts />} />
-          {user?.role === 'manager' && (
-            <Route path="/manager" element={<ManagerDashboard />} />
-          )}
-        </Routes>
-      </Layout>
-    </Box>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/availability" element={<Availability />} />
+        <Route path="/shifts" element={<Shifts />} />
+        {user.role === 'manager' && <Route path="/manager" element={<ManagerDashboard />} />}
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Layout>
   )
-}
-
-export default App 
+} 

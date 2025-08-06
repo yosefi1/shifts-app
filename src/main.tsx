@@ -1,68 +1,46 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from 'react-query'
+import App from './App'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import { StyledEngineProvider } from '@mui/material/styles'
+import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import App from './App.tsx'
+import { QueryClient, QueryClientProvider } from 'react-query'
+import { create } from 'zustand'
+import { prefixer } from 'stylis'
+import rtlPlugin from 'stylis-plugin-rtl'
+import { CacheProvider } from '@emotion/react'
+import createCache from '@emotion/cache'
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-})
-
-// Create Material-UI theme
 const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
+  direction: 'rtl',
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-        },
-      },
-    },
+    fontFamily: '"Heebo", "Arial", sans-serif',
   },
 })
+
+const cacheRtl = createCache({
+  key: 'muirtl',
+  stylisPlugins: [prefixer, rtlPlugin],
+})
+
+const queryClient = new QueryClient()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <BrowserRouter>
-          <App />
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-            }}
-          />
-        </BrowserRouter>
-      </ThemeProvider>
-    </QueryClientProvider>
-  </React.StrictMode>,
+    <CacheProvider value={cacheRtl}>
+      <StyledEngineProvider injectFirst>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <QueryClientProvider client={queryClient}>
+            <BrowserRouter>
+              <App />
+              <Toaster position="top-center" />
+            </BrowserRouter>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </CacheProvider>
+  </React.StrictMode>
 ) 
