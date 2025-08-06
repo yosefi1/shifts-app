@@ -16,8 +16,7 @@ import {
   IconButton,
   Tabs,
   Tab,
-  Alert,
-  Grid
+  Alert
 } from '@mui/material'
 import { ArrowBack, AutoFixHigh, Visibility, History } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
@@ -127,16 +126,16 @@ export default function ManagerDashboardNew() {
           
           if (assignedWorker) {
             const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
-            newShifts.push({
-              id: `${dateStr}-${position}-${slot}`,
-              date: dateStr,
-              startTime: shiftTime?.start || '08:00',
-              endTime: shiftTime?.end || '12:00',
-              station: position,
-              workerId: assignedWorker.id,
-              workerName: assignedWorker.name,
-              status: 'assigned',
-            })
+                         newShifts.push({
+               id: `${dateStr}-${position}-${slot}`,
+               date: dateStr,
+               startTime: shiftTime?.start || '08:00',
+               endTime: shiftTime?.end || '12:00',
+               station: position,
+               workerId: assignedWorker.id,
+               workerName: assignedWorker.name,
+               status: 'assigned' as const,
+             })
           }
         })
       })
@@ -244,12 +243,8 @@ export default function ManagerDashboardNew() {
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>עמדה</TableCell>
-              {nextWeekDates.map((date, index) => {
-                const isSunday = index === 0 || index === 7
-                const isFirstSunday = index === 0
-                const isLastSunday = index === 7
-                
-                return (
+                             {nextWeekDates.map((date, index) => {
+                 return (
                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                     {hebrewDays[index]}
                     <Typography variant="caption" display="block">
@@ -264,21 +259,20 @@ export default function ManagerDashboardNew() {
             {demoPositions.map((position) => (
               <TableRow key={position}>
                 <TableCell sx={{ fontWeight: 'bold' }}>{position}</TableCell>
-                {nextWeekDates.map((date, dayIndex) => {
-                  const dateStr = format(date, 'yyyy-MM-dd')
-                  const isSunday = dayIndex === 0 || dayIndex === 7
-                  const isFirstSunday = dayIndex === 0
-                  const isLastSunday = dayIndex === 7
-                  
-                  // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
-                  const availableSlots = []
-                  if (isFirstSunday) {
-                    availableSlots.push('first')
-                  } else if (isLastSunday) {
-                    availableSlots.push('second')
-                  } else {
-                    availableSlots.push('first', 'second')
-                  }
+                                 {nextWeekDates.map((date, dayIndex) => {
+                   const dateStr = format(date, 'yyyy-MM-dd')
+                   const isFirstSunday = dayIndex === 0
+                   const isLastSunday = dayIndex === 7
+                   
+                   // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
+                   const availableSlots = []
+                   if (isFirstSunday) {
+                     availableSlots.push('first')
+                   } else if (isLastSunday) {
+                     availableSlots.push('second')
+                   } else {
+                     availableSlots.push('first', 'second')
+                   }
                   
                   return (
                     <TableCell key={dateStr} align="center">
@@ -301,16 +295,16 @@ export default function ManagerDashboardNew() {
                                     handleWorkerChange(existingShift.id, e.target.value)
                                   } else {
                                     // Create new shift
-                                    const newShift = {
-                                      id: shiftId,
-                                      date: dateStr,
-                                      startTime: shiftTime?.start || '08:00',
-                                      endTime: shiftTime?.end || '12:00',
-                                      station: position,
-                                      workerId: e.target.value,
-                                      workerName: worker?.name || '',
-                                      status: 'assigned',
-                                    }
+                                                                         const newShift = {
+                                       id: shiftId,
+                                       date: dateStr,
+                                       startTime: shiftTime?.start || '08:00',
+                                       endTime: shiftTime?.end || '12:00',
+                                       station: position,
+                                       workerId: e.target.value,
+                                       workerName: worker?.name || '',
+                                       status: 'assigned' as const,
+                                     }
                                     setShifts([...shifts, newShift])
                                   }
                                 }
