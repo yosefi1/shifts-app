@@ -149,7 +149,7 @@ export default function Login() {
               </Typography>
 
               <List>
-                {demoUsers.map((user, index) => (
+                {demoUsers.map((user) => (
                   <ListItem
                     key={user.id}
                     button

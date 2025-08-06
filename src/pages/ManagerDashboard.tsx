@@ -51,7 +51,7 @@ const demoWorkers = [
 ]
 
 // Demo stations
-const demoStations = [
+const demoStations: Station[] = [
   { id: '1', name: 'Assembly Line A', genderRequirement: 'any', maxWorkers: 2, priority: 1 },
   { id: '2', name: 'Quality Control', genderRequirement: 'female', maxWorkers: 1, priority: 2 },
   { id: '3', name: 'Heavy Lifting', genderRequirement: 'male', maxWorkers: 1, priority: 3 },
@@ -59,7 +59,6 @@ const demoStations = [
 ]
 
 export default function ManagerDashboard() {
-  const { user } = useAuthStore()
   const { shifts, availability, stations, setShifts, setStations } = useShiftsStore()
   const [editingShift, setEditingShift] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<any>({})

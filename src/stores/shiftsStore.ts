@@ -41,7 +41,7 @@ interface ShiftsState {
   updateAvailability: (id: string, updates: Partial<Availability>) => void
 }
 
-export const useShiftsStore = create<ShiftsState>((set, get) => ({
+export const useShiftsStore = create<ShiftsState>((set) => ({
   shifts: [],
   availability: [],
   stations: [],

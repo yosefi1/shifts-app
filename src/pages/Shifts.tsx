@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Card,
@@ -7,8 +7,6 @@ import {
   Grid,
   Chip,
   List,
-  ListItem,
-  ListItemText,
   ListItemIcon,
   Avatar,
   Tabs,
@@ -19,8 +17,6 @@ import {
 } from '@mui/material'
 import {
   Schedule,
-  CheckCircle,
-  Warning,
   Assignment,
   CalendarToday,
 } from '@mui/icons-material'
@@ -61,7 +57,7 @@ export default function Shifts() {
   const todayShifts = userShifts.filter((shift) => isToday(new Date(shift.date)))
   const pastShifts = userShifts.filter((shift) => isPast(new Date(shift.date)))
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
   }
 

@@ -72,7 +72,7 @@ export default function Availability() {
     setIsSubmitting(true)
     try {
       // Remove existing availability for next week
-      const existingIds = availability
+      availability
         .filter(
           (avail) => avail.workerId === user?.id && avail.date >= format(nextWeekStart, 'yyyy-MM-dd')
         )
