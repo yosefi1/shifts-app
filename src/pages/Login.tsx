@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Box, Card, CardContent, Typography, TextField, Button } from '@mui/material'
 
-const users = {
+const users: Record<string, { id: string; name: string; role: string }> = {
   '1': { id: '1', name: 'מנהל', role: 'manager' },
   '2': { id: '2', name: 'עובד 2', role: 'worker' },
   '3': { id: '3', name: 'עובד 3', role: 'worker' },

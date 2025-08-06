@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { Box, Typography, Card, CardContent, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem } from '@mui/material'
+import { Box, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Select, MenuItem } from '@mui/material'
 import { useShiftsStore } from '../stores/shiftsStore'
-import { useAuthStore } from '../stores/authStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
 export default function ManagerDashboard() {
   const { shifts, setShifts, stations } = useShiftsStore()
-  const { user } = useAuthStore()
   const [isGenerating, setIsGenerating] = useState(false)
 
   const nextWeekStart = startOfWeek(addDays(new Date(), 7))
@@ -24,7 +22,7 @@ export default function ManagerDashboard() {
   // Generate automatic assignments (simple round-robin)
   const generateAssignments = () => {
     setIsGenerating(true)
-    const newShifts = []
+    const newShifts: any[] = []
     let workerIndex = 0
     nextWeekDates.forEach((date) => {
       const dateStr = format(date, 'yyyy-MM-dd')

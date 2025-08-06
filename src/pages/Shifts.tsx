@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Box, Typography, Card, CardContent, Tabs, Tab, List, ListItem, ListItemText } from '@mui/material'
+import { Box, Typography, Tabs, Tab, List, ListItem, ListItemText } from '@mui/material'
 import { useAuthStore } from '../stores/authStore'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, isToday, isPast, isFuture } from 'date-fns'
