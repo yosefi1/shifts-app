@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Box, Typography, Tabs, Tab, List, ListItem, ListItemText } from '@mui/material'
+import { Box, Typography, Tabs, Tab, List, ListItem, ListItemText, IconButton } from '@mui/material'
+import { ArrowBack } from '@mui/icons-material'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, isToday, isPast, isFuture } from 'date-fns'
@@ -8,6 +10,7 @@ export default function Shifts() {
   const { user } = useAuthStore()
   const { shifts } = useShiftsStore()
   const [tabValue, setTabValue] = useState(0)
+  const navigate = useNavigate()
 
   const userShifts = shifts.filter((shift) => shift.workerId === user?.id)
   const upcomingShifts = userShifts.filter((shift) => isFuture(new Date(shift.date)))
@@ -38,9 +41,14 @@ export default function Shifts() {
 
   return (
     <Box dir="rtl">
-      <Typography variant="h4" gutterBottom>
-        המשמרות שלי
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+          <ArrowBack />
+        </IconButton>
+        <Typography variant="h4">
+          המשמרות שלי
+        </Typography>
+      </Box>
       <Tabs value={tabValue} onChange={handleTabChange} centered>
         <Tab label="קרובות" />
         <Tab label="היום" />

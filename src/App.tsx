@@ -4,7 +4,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Availability from './pages/Availability'
 import Shifts from './pages/Shifts'
-import ManagerDashboard from './pages/ManagerDashboard'
+import ManagerDashboard from './pages/ManagerDashboardNew'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 export default function App() {

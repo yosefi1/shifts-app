@@ -16,17 +16,49 @@ import {
   IconButton,
   Tabs,
   Tab,
-  Alert
+  Alert,
+  Grid
 } from '@mui/material'
 import { ArrowBack, AutoFixHigh, Visibility, History } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
-export default function ManagerDashboard() {
+export default function ManagerDashboardNew() {
   const { shifts, setShifts, availability } = useShiftsStore()
   const [tabValue, setTabValue] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [firstShiftTime, setFirstShiftTime] = useState({ start: '20:00', end: '00:00' })
+  const [shiftTimes, setShiftTimes] = useState({
+    first: { start: '20:00', end: '00:00' },
+    second: { start: '08:00', end: '12:00' }
+  })
+
+  // Calculate second shift based on first shift
+  const calculateSecondShift = (firstShift: { start: string, end: string }) => {
+    const startHour = parseInt(firstShift.start.split(':')[0])
+    const endHour = parseInt(firstShift.end.split(':')[0])
+    
+    if (startHour === 20 && endHour === 0) {
+      return { start: '08:00', end: '12:00' }
+    } else if (startHour === 0 && endHour === 4) {
+      return { start: '12:00', end: '16:00' }
+    } else if (startHour === 4 && endHour === 8) {
+      return { start: '16:00', end: '20:00' }
+    } else {
+      return { start: '08:00', end: '12:00' } // default
+    }
+  }
+
+  // Update shift times when first shift changes
+  const handleFirstShiftChange = (newFirstShift: { start: string, end: string }) => {
+    setFirstShiftTime(newFirstShift)
+    const secondShift = calculateSecondShift(newFirstShift)
+    setShiftTimes({
+      first: newFirstShift,
+      second: secondShift
+    })
+  }
   const navigate = useNavigate()
 
   const currentWeekStart = startOfWeek(new Date())
@@ -49,10 +81,9 @@ export default function ManagerDashboard() {
     { id: '3', name: 'עובד 3' },
   ]
 
-  // Demo positions (based on the image)
+  // Demo positions (based on the photo)
   const demoPositions = [
-    'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ', 'ק', 'ר', 'ש', 'ת',
-    '20', '516', 'גישרון 11', 'גישרון 17', '39 א', '39 ב', 'סיור 10', 'סיור 10א'
+    'א\'', 'ב\'', 'ג\'', 'ד\'', 'ו\'', 'ז\'', 'ח\'', '20', 'גישרון 11', 'גישרון 17', '5/6', '39א', '39ב', 'סיור 10', 'סיור 10א', 'עתודות', 'אפטרים'
   ]
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -72,8 +103,13 @@ export default function ManagerDashboard() {
       demoPositions.forEach((position, positionIndex) => {
         // Determine available time slots for this day
         const availableSlots = []
-        if (!isFirstSunday) availableSlots.push('morning')
-        if (!isLastSunday) availableSlots.push('evening')
+        if (isFirstSunday) {
+          availableSlots.push('first')
+        } else if (isLastSunday) {
+          availableSlots.push('second')
+        } else {
+          availableSlots.push('first', 'second')
+        }
         
         availableSlots.forEach((slot) => {
           // Find available workers for this slot
@@ -90,11 +126,12 @@ export default function ManagerDashboard() {
           const assignedWorker = availableWorkers[positionIndex % availableWorkers.length] || availableWorkers[0]
           
           if (assignedWorker) {
+            const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
             newShifts.push({
               id: `${dateStr}-${position}-${slot}`,
               date: dateStr,
-              startTime: slot === 'morning' ? '08:00' : '20:00',
-              endTime: slot === 'morning' ? '12:00' : '00:00',
+              startTime: shiftTime?.start || '08:00',
+              endTime: shiftTime?.end || '12:00',
               station: position,
               workerId: assignedWorker.id,
               workerName: assignedWorker.name,
@@ -134,8 +171,8 @@ export default function ManagerDashboard() {
             ))}
           </TableRow>
         </TableHead>
-        <TableBody>
-          {demoPositions.slice(0, 10).map((position) => (
+                 <TableBody>
+           {demoPositions.map((position) => (
             <TableRow key={position}>
               <TableCell sx={{ fontWeight: 'bold' }}>{position}</TableCell>
               {currentWeekDates.map((date) => {
@@ -170,11 +207,26 @@ export default function ManagerDashboard() {
 
   const renderNextWeekTable = () => (
     <Box>
-      <Alert severity="info" sx={{ mb: 2 }}>
-        <Typography variant="body2">
-          <strong>אילוצים נאספו עד רביעי.</strong> ביום חמישי-שישי יפורסם השיבוץ הבא.
-        </Typography>
-      </Alert>
+      {/* Dynamic Shift Time Selection */}
+      <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+        <Typography variant="subtitle1" sx={{ mb: 2 }}>שעות משמרות</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="subtitle2">בחר משמרת:</Typography>
+          <Select
+            value={`${firstShiftTime.start}-${firstShiftTime.end}`}
+            onChange={(e) => {
+              const [start, end] = e.target.value.split('-')
+              handleFirstShiftChange({ start, end })
+            }}
+            size="small"
+            sx={{ minWidth: 200 }}
+          >
+            <MenuItem value="20:00-00:00">20:00-00:00 → 08:00-12:00</MenuItem>
+            <MenuItem value="00:00-04:00">00:00-04:00 → 12:00-16:00</MenuItem>
+            <MenuItem value="04:00-08:00">04:00-08:00 → 16:00-20:00</MenuItem>
+          </Select>
+        </Box>
+      </Box>
       
       <Button 
         variant="contained" 
@@ -192,40 +244,91 @@ export default function ManagerDashboard() {
           <TableHead>
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>עמדה</TableCell>
-              {nextWeekDates.map((date, index) => (
-                <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                  {hebrewDays[index]}
-                  <Typography variant="caption" display="block">
-                    {format(date, 'dd/MM')}
-                  </Typography>
-                </TableCell>
-              ))}
+              {nextWeekDates.map((date, index) => {
+                const isSunday = index === 0 || index === 7
+                const isFirstSunday = index === 0
+                const isLastSunday = index === 7
+                
+                return (
+                  <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+                    {hebrewDays[index]}
+                    <Typography variant="caption" display="block">
+                      {format(date, 'dd/MM')}
+                    </Typography>
+                  </TableCell>
+                )
+              })}
             </TableRow>
           </TableHead>
           <TableBody>
-            {demoPositions.slice(0, 10).map((position) => (
+            {demoPositions.map((position) => (
               <TableRow key={position}>
                 <TableCell sx={{ fontWeight: 'bold' }}>{position}</TableCell>
-                {nextWeekDates.map((date) => {
+                {nextWeekDates.map((date, dayIndex) => {
                   const dateStr = format(date, 'yyyy-MM-dd')
-                  const shift = shifts.find(s => s.date === dateStr && s.station === position)
+                  const isSunday = dayIndex === 0 || dayIndex === 7
+                  const isFirstSunday = dayIndex === 0
+                  const isLastSunday = dayIndex === 7
+                  
+                  // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
+                  const availableSlots = []
+                  if (isFirstSunday) {
+                    availableSlots.push('first')
+                  } else if (isLastSunday) {
+                    availableSlots.push('second')
+                  } else {
+                    availableSlots.push('first', 'second')
+                  }
                   
                   return (
                     <TableCell key={dateStr} align="center">
-                      {shift ? (
-                        <Select
-                          value={shift.workerId}
-                          onChange={e => handleWorkerChange(shift.id, e.target.value as string)}
-                          size="small"
-                          sx={{ minWidth: 100 }}
-                        >
-                          {workers.map((w) => (
-                            <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>
-                          ))}
-                        </Select>
-                      ) : (
-                        <Typography variant="caption" color="textSecondary">לא משובץ</Typography>
-                      )}
+                      {availableSlots.map((slot, slotIndex) => {
+                        const shiftId = `${dateStr}-${position}-${slot}`
+                        const existingShift = shifts.find(s => s.id === shiftId)
+                        const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
+                        
+                        return (
+                          <Box key={slot} sx={{ mb: slotIndex > 0 ? 1 : 0 }}>
+                            <Typography variant="caption" color="textSecondary" display="block">
+                              {shiftTime?.start}-{shiftTime?.end}
+                            </Typography>
+                            <Select
+                              value={existingShift?.workerId || ''}
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  const worker = workers.find(w => w.id === e.target.value)
+                                  if (existingShift) {
+                                    handleWorkerChange(existingShift.id, e.target.value)
+                                  } else {
+                                    // Create new shift
+                                    const newShift = {
+                                      id: shiftId,
+                                      date: dateStr,
+                                      startTime: shiftTime?.start || '08:00',
+                                      endTime: shiftTime?.end || '12:00',
+                                      station: position,
+                                      workerId: e.target.value,
+                                      workerName: worker?.name || '',
+                                      status: 'assigned',
+                                    }
+                                    setShifts([...shifts, newShift])
+                                  }
+                                }
+                              }}
+                              size="small"
+                              sx={{ minWidth: 100 }}
+                              displayEmpty
+                            >
+                              <MenuItem value="">
+                                <Typography variant="caption" color="textSecondary">בחר עובד</Typography>
+                              </MenuItem>
+                              {workers.map((w) => (
+                                <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>
+                              ))}
+                            </Select>
+                          </Box>
+                        )
+                      })}
                     </TableCell>
                   )
                 })}
@@ -288,21 +391,21 @@ export default function ManagerDashboard() {
   }
 
   const renderPreviousAssignments = () => (
-    <Alert severity="info">
-      <Typography variant="body2">
-        כאן יוצגו השיבוצים הקודמים. רק מנהלים יכולים לראות היסטוריה זו.
-      </Typography>
-    </Alert>
-  )
+     <Alert severity="info">
+       <Typography variant="body2">
+         כאן יוצגו השיבוצים הקודמים. רק מנהלים יכולים לראות היסטוריה זו.
+       </Typography>
+     </Alert>
+   )
 
-  return (
+     return (
     <Box dir="rtl" sx={{ maxWidth: '100%' }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" sx={{ color: 'red', fontSize: '2rem' }}>
-          🚨 ניהול משמרות - TEST! {new Date().toLocaleTimeString()} 🚨
+        <Typography variant="h4" sx={{ color: 'blue', fontSize: '2rem' }}>
+          🎯 ניהול שיבוצים - מנהל {new Date().toLocaleTimeString()} 🎯
         </Typography>
       </Box>
 
@@ -337,4 +440,4 @@ export default function ManagerDashboard() {
       </Box>
     </Box>
   )
-} 
+ } 

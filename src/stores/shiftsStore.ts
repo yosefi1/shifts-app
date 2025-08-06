@@ -16,8 +16,9 @@ export interface Availability {
   id: string
   workerId: string
   date: string
+  timeSlot: string
   isAvailable: boolean
-  reason?: string
+  note?: string
 }
 
 export interface Station {

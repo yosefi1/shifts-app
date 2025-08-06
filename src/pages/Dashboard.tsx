@@ -6,6 +6,44 @@ export default function Dashboard() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
 
+  if (user?.role === 'manager') {
+    return (
+      <Box dir="rtl">
+        <Typography variant="h4" gutterBottom>
+          ברוך הבא, {user?.name}
+        </Typography>
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">ניהול שיבוצים</Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  צפייה בשיבוצים נוכחיים, יצירת שיבוצים חדשים וניהול אילוצי עובדים
+                </Typography>
+                <Button variant="contained" fullWidth onClick={() => navigate('/manager')}>
+                  עבור לניהול
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6">סטטיסטיקות</Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  סקירה כללית של השיבוצים והעובדים במערכת
+                </Typography>
+                <Button variant="outlined" fullWidth disabled>
+                  בקרוב
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+    )
+  }
+
   return (
     <Box dir="rtl">
       <Typography variant="h4" gutterBottom>
@@ -32,18 +70,16 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </Grid>
-        {user?.role === 'manager' && (
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6">ניהול משמרות</Typography>
-                <Button variant="contained" fullWidth onClick={() => navigate('/manager')}>
-                  עבור לניהול
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6">סטטיסטיקות</Typography>
+              <Button variant="outlined" fullWidth disabled>
+                בקרוב
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
     </Box>
   )

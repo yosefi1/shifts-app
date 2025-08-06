@@ -25,6 +25,8 @@ import {
   Settings,
   Logout,
   AccountCircle,
+  ChevronLeft,
+  ChevronRight,
 } from '@mui/icons-material'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
@@ -37,6 +39,7 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [desktopOpen, setDesktopOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
@@ -45,7 +48,11 @@ export default function Layout({ children }: LayoutProps) {
   const { user, setUser } = useAuthStore()
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
+    if (isMobile) {
+      setMobileOpen(!mobileOpen)
+    } else {
+      setDesktopOpen(!desktopOpen)
+    }
   }
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -62,14 +69,16 @@ export default function Layout({ children }: LayoutProps) {
     handleProfileMenuClose()
   }
 
-  const menuItems = [
-    { text: 'ראשי', icon: <Dashboard />, path: '/' },
-    { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
-    { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
-    ...(user?.role === 'manager'
-      ? [{ text: 'ניהול (למנהל בלבד)', icon: <Settings />, path: '/manager' }]
-      : []),
-  ]
+  const menuItems = user?.role === 'manager' 
+    ? [
+        { text: 'ראשי', icon: <Dashboard />, path: '/' },
+        { text: 'ניהול (למנהל בלבד)', icon: <Settings />, path: '/manager' },
+      ]
+    : [
+        { text: 'ראשי', icon: <Dashboard />, path: '/' },
+        { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
+        { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
+      ]
 
   const drawer = (
     <div>
@@ -103,30 +112,19 @@ export default function Layout({ children }: LayoutProps) {
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
+          width: { md: `calc(100% - ${desktopOpen ? drawerWidth : 0}px)` },
+          ml: { md: `${desktopOpen ? drawerWidth : 0}px` },
+          transition: 'none',
         }}
       >
         <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find((item) => item.path === location.pathname)?.text || 'ניהול משמרות'}
-          </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user?.name}
             </Typography>
             <IconButton
               size="large"
-              edge="end"
+              edge="start"
               aria-label="account of current user"
               aria-controls="primary-search-account-menu"
               aria-haspopup="true"
@@ -136,11 +134,32 @@ export default function Layout({ children }: LayoutProps) {
               <AccountCircle />
             </IconButton>
           </Box>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, textAlign: 'center' }}>
+            {menuItems.find((item) => item.path === location.pathname)?.text || 'ניהול משמרות'}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" noWrap component="div">
+              תפריט
+            </Typography>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="end"
+              onClick={handleDrawerToggle}
+              sx={{ ml: 1 }}
+            >
+              {isMobile ? <MenuIcon /> : (desktopOpen ? <ChevronLeft /> : <ChevronRight />)}
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        sx={{ 
+          width: { md: desktopOpen ? drawerWidth : 0 }, 
+          flexShrink: { md: 0 },
+          order: { md: 1 }
+        }}
         aria-label="mailbox folders"
       >
         <Drawer
@@ -157,23 +176,32 @@ export default function Layout({ children }: LayoutProps) {
         >
           {drawer}
         </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {drawer}
-        </Drawer>
+        {desktopOpen && (
+          <Drawer
+            variant="persistent"
+            open={true}
+            anchor="left"
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              '& .MuiDrawer-paper': { 
+                boxSizing: 'border-box', 
+                width: drawerWidth,
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        )}
       </Box>
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: 3,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
+          width: { md: `calc(100% - ${desktopOpen ? drawerWidth : 0}px)` },
+          ml: { md: `${desktopOpen ? drawerWidth : 0}px` },
+          transition: 'none',
+          order: { md: 2 }
         }}
       >
         <Toolbar />
