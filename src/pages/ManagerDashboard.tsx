@@ -37,8 +37,8 @@ import {
   People,
   Schedule,
 } from '@mui/icons-material'
-import { useAuthStore } from '../stores/authStore'
 import { useShiftsStore } from '../stores/shiftsStore'
+import { Station } from '../stores/shiftsStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
