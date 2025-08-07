@@ -674,4 +674,4 @@ export default function ManagerDashboardNew() {
       </Box>
     </Box>
   )
- } 
+}
