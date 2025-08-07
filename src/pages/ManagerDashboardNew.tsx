@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Typography, 
@@ -16,7 +16,11 @@ import {
   IconButton,
   Tabs,
   Tab,
-  Alert
+  Alert,
+  Card,
+  CardContent,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import { ArrowBack, AutoFixHigh, Visibility, History } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
@@ -24,6 +28,8 @@ import { useShiftsStore } from '../stores/shiftsStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
 export default function ManagerDashboardNew() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const { shifts, setShifts, availability } = useShiftsStore()
   const [tabValue, setTabValue] = useState(0)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -154,77 +160,139 @@ export default function ManagerDashboardNew() {
     )
   }
 
-          const renderCurrentWeekTable = () => (
-       <>
-         <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
-           <Typography variant="body2">
-             💡 הטבלה מותאמת למסך הטלפון
-           </Typography>
-         </Alert>
-         <Box>
-         <TableContainer component={Paper} sx={{ width: '100%' }}>
-         <Table size="small">
-           <TableHead>
-                            <TableRow>
-                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
-                 {currentWeekDates.map((date, index) => (
-                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
-                   <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
-                     {hebrewDays[index]}
-                   </Typography>
-                   <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
-                     {format(date, 'dd/MM')}
-                   </Typography>
-                 </TableCell>
-               ))}
-             </TableRow>
-           </TableHead>
-           <TableBody>
-             {demoPositions.map((position) => (
-               <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
-                 {currentWeekDates.map((date) => {
-                   const dateStr = format(date, 'yyyy-MM-dd')
-                   const shift = shifts.find(s => s.date === dateStr && s.station === position)
-                   
-                   return (
-                     <TableCell key={dateStr} align="center" sx={{ width: '11.4%' }}>
-                       {shift ? (
-                         <Select
-                           value={shift.workerId}
-                           onChange={e => handleWorkerChange(shift.id, e.target.value as string)}
-                           size="small"
-                           sx={{ 
-                             minWidth: { xs: 60, sm: 80 },
-                             fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                             '& .MuiSelect-select': {
-                               fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                               padding: { xs: '4px 8px', sm: '8px 12px' }
-                             }
-                           }}
-                         >
-                           {workers.map((w) => (
-                             <MenuItem key={w.id} value={w.id} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
-                               {w.name}
-                             </MenuItem>
-                           ))}
-                         </Select>
-                       ) : (
-                         <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
-                           לא משובץ
-                         </Typography>
-                       )}
-                     </TableCell>
-                   )
-                 })}
-               </TableRow>
-             ))}
-           </TableBody>
-                    </Table>
-         </TableContainer>
-       </Box>
-       </>
-     )
+          const renderCurrentWeekTable = () => {
+            if (isMobile) {
+              return (
+                <Box>
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      📱 תצוגה מותאמת לטלפון - כל עמדה בכרטיס נפרד
+                    </Typography>
+                  </Alert>
+                  {demoPositions.map((position) => (
+                    <Card key={position} sx={{ mb: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                          {position}
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {currentWeekDates.map((date, index) => {
+                            const dateStr = format(date, 'yyyy-MM-dd')
+                            const shift = shifts.find(s => s.date === dateStr && s.station === position)
+                            
+                            return (
+                              <Box key={dateStr} sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                p: 1,
+                                border: '1px solid #e0e0e0',
+                                borderRadius: 1
+                              }}>
+                                <Box>
+                                  <Typography variant="body2" fontWeight="bold">
+                                    {hebrewDays[index]}
+                                  </Typography>
+                                  <Typography variant="caption" color="textSecondary">
+                                    {format(date, 'dd/MM')}
+                                  </Typography>
+                                </Box>
+                                <Box sx={{ minWidth: 120 }}>
+                                  {shift ? (
+                                    <Select
+                                      value={shift.workerId}
+                                      onChange={e => handleWorkerChange(shift.id, e.target.value as string)}
+                                      size="small"
+                                      fullWidth
+                                    >
+                                      {workers.map((w) => (
+                                        <MenuItem key={w.id} value={w.id}>
+                                          {w.name}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  ) : (
+                                    <Typography variant="body2" color="textSecondary">
+                                      לא משובץ
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+                            )
+                          })}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              )
+            }
+
+            return (
+              <Box>
+                <TableContainer component={Paper} sx={{ width: '100%' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
+                        {currentWeekDates.map((date, index) => (
+                          <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
+                            <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
+                              {hebrewDays[index]}
+                            </Typography>
+                            <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
+                              {format(date, 'dd/MM')}
+                            </Typography>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {demoPositions.map((position) => (
+                        <TableRow key={position}>
+                          <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
+                          {currentWeekDates.map((date) => {
+                            const dateStr = format(date, 'yyyy-MM-dd')
+                            const shift = shifts.find(s => s.date === dateStr && s.station === position)
+                            
+                            return (
+                              <TableCell key={dateStr} align="center" sx={{ width: '11.4%' }}>
+                                {shift ? (
+                                  <Select
+                                    value={shift.workerId}
+                                    onChange={e => handleWorkerChange(shift.id, e.target.value as string)}
+                                    size="small"
+                                    sx={{ 
+                                      minWidth: { xs: 60, sm: 80 },
+                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                      '& .MuiSelect-select': {
+                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                        padding: { xs: '4px 8px', sm: '8px 12px' }
+                                      }
+                                    }}
+                                  >
+                                    {workers.map((w) => (
+                                      <MenuItem key={w.id} value={w.id} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                                        {w.name}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                ) : (
+                                  <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
+                                    לא משובץ
+                                  </Typography>
+                                )}
+                              </TableCell>
+                            )
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            )
+          }
 
      const renderNextWeekTable = () => (
      <Box>
@@ -260,9 +328,9 @@ export default function ManagerDashboardNew() {
          {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
        </Button>
 
-       <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
+       <Alert severity="success" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
          <Typography variant="body2">
-           💡 הטבלה מותאמת למסך הטלפון
+           ✅ גרסה חדשה! הטבלה מותאמת למסך הטלפון - {new Date().toLocaleTimeString()}
          </Typography>
        </Alert>
 
