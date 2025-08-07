@@ -178,13 +178,13 @@ export default function ManagerDashboardNew() {
            },
          },
        }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 1600, sm: 'auto' } }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 2000, sm: 'auto' } }}>
          <Table size="small">
            <TableHead>
              <TableRow>
-               <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>עמדה</TableCell>
+               <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>עמדה</TableCell>
                {currentWeekDates.map((date, index) => (
-                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 80 }}>
+                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 100 }}>
                    <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                      {hebrewDays[index]}
                    </Typography>
@@ -198,13 +198,13 @@ export default function ManagerDashboardNew() {
            <TableBody>
              {demoPositions.map((position) => (
                <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>{position}</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>{position}</TableCell>
                  {currentWeekDates.map((date) => {
                    const dateStr = format(date, 'yyyy-MM-dd')
                    const shift = shifts.find(s => s.date === dateStr && s.station === position)
                    
                    return (
-                     <TableCell key={dateStr} align="center" sx={{ minWidth: 80 }}>
+                     <TableCell key={dateStr} align="center" sx={{ minWidth: 100 }}>
                        {shift ? (
                          <Select
                            value={shift.workerId}
@@ -299,13 +299,13 @@ export default function ManagerDashboardNew() {
            },
          },
        }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 1600, sm: 'auto' } }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 2000, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
                <TableRow>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>עמדה</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>עמדה</TableCell>
                  {nextWeekDates.map((date, index) => (
-                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 80 }}>
+                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 100 }}>
                      <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                        {hebrewDays[index]}
                      </Typography>
@@ -318,8 +318,8 @@ export default function ManagerDashboardNew() {
              </TableHead>
              <TableBody>
                {demoPositions.map((position) => (
-                                <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>{position}</TableCell>
+                                                                 <TableRow key={position}>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>{position}</TableCell>
                  {nextWeekDates.map((date, dayIndex) => {
                    const dateStr = format(date, 'yyyy-MM-dd')
                    const isFirstSunday = dayIndex === 0
@@ -336,7 +336,7 @@ export default function ManagerDashboardNew() {
                    }
                  
                    return (
-                     <TableCell key={dateStr} align="center" sx={{ minWidth: 80 }}>
+                     <TableCell key={dateStr} align="center" sx={{ minWidth: 100 }}>
                          {availableSlots.map((slot, slotIndex) => {
                            const shiftId = `${dateStr}-${position}-${slot}`
                            const existingShift = shifts.find(s => s.id === shiftId)
