@@ -158,21 +158,21 @@ export default function ManagerDashboardNew() {
        <>
          <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
            <Typography variant="body2">
-             💡 גלול ימינה ושמאלה כדי לראות את כל הטבלה
+             💡 הטבלה מותאמת למסך הטלפון
            </Typography>
          </Alert>
-         <Box className="table-scroll-container">
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 3000, sm: 'auto' } }}>
+         <Box>
+         <TableContainer component={Paper} sx={{ width: '100%' }}>
          <Table size="small">
            <TableHead>
-             <TableRow>
-               <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>עמדה</TableCell>
-               {currentWeekDates.map((date, index) => (
-                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 120 }}>
-                   <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                            <TableRow>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
+                 {currentWeekDates.map((date, index) => (
+                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
+                   <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                      {hebrewDays[index]}
                    </Typography>
-                   <Typography variant="caption" display="block" sx={{ fontSize: '0.6rem' }}>
+                   <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
                      {format(date, 'dd/MM')}
                    </Typography>
                  </TableCell>
@@ -182,13 +182,13 @@ export default function ManagerDashboardNew() {
            <TableBody>
              {demoPositions.map((position) => (
                <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>{position}</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
                  {currentWeekDates.map((date) => {
                    const dateStr = format(date, 'yyyy-MM-dd')
                    const shift = shifts.find(s => s.date === dateStr && s.station === position)
                    
                    return (
-                     <TableCell key={dateStr} align="center" sx={{ minWidth: 120 }}>
+                     <TableCell key={dateStr} align="center" sx={{ width: '11.4%' }}>
                        {shift ? (
                          <Select
                            value={shift.workerId}
@@ -262,22 +262,22 @@ export default function ManagerDashboardNew() {
 
        <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
          <Typography variant="body2">
-           💡 גלול ימינה ושמאלה כדי לראות את כל הטבלה
+           💡 הטבלה מותאמת למסך הטלפון
          </Typography>
        </Alert>
 
-                <Box className="table-scroll-container">
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 3000, sm: 'auto' } }}>
+                <Box>
+         <TableContainer component={Paper} sx={{ width: '100%' }}>
            <Table size="small">
              <TableHead>
                <TableRow>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>עמדה</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
                  {nextWeekDates.map((date, index) => (
-                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 120 }}>
-                     <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
+                     <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                        {hebrewDays[index]}
                      </Typography>
-                     <Typography variant="caption" display="block" sx={{ fontSize: '0.6rem' }}>
+                     <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
                        {format(date, 'dd/MM')}
                      </Typography>
                    </TableCell>
@@ -287,7 +287,7 @@ export default function ManagerDashboardNew() {
              <TableBody>
                {demoPositions.map((position) => (
                                                                  <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 150 }}>{position}</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
                  {nextWeekDates.map((date, dayIndex) => {
                    const dateStr = format(date, 'yyyy-MM-dd')
                    const isFirstSunday = dayIndex === 0
@@ -304,7 +304,7 @@ export default function ManagerDashboardNew() {
                    }
                  
                    return (
-                     <TableCell key={dateStr} align="center" sx={{ minWidth: 120 }}>
+                     <TableCell key={dateStr} align="center" sx={{ width: '11.4%' }}>
                          {availableSlots.map((slot, slotIndex) => {
                            const shiftId = `${dateStr}-${position}-${slot}`
                            const existingShift = shifts.find(s => s.id === shiftId)
@@ -383,15 +383,15 @@ export default function ManagerDashboardNew() {
      })
 
             return (
-         <Box className="table-scroll-container">
-           <TableContainer component={Paper} sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
+                   <Box>
+           <TableContainer component={Paper} sx={{ width: '100%' }}>
            <Table size="small">
              <TableHead>
                <TableRow>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>עובד</TableCell>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>תאריך</TableCell>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>משמרת</TableCell>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 120 }}>הסבר</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>עובד</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>תאריך</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>משמרת</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>הסבר</TableCell>
                </TableRow>
              </TableHead>
              <TableBody>
