@@ -294,47 +294,176 @@ export default function ManagerDashboardNew() {
             )
           }
 
-     const renderNextWeekTable = () => (
-     <Box>
-       {/* Dynamic Shift Time Selection */}
-       <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-         <Typography variant="subtitle1" sx={{ mb: 2 }}>שעות משמרות</Typography>
-         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
-           <Typography variant="subtitle2">בחר משמרת:</Typography>
-           <Select
-             value={`${firstShiftTime.start}-${firstShiftTime.end}`}
-             onChange={(e) => {
-               const [start, end] = e.target.value.split('-')
-               handleFirstShiftChange({ start, end })
-             }}
-             size="small"
-             sx={{ minWidth: { xs: '100%', sm: 200 } }}
+     const renderNextWeekTable = () => {
+       if (isMobile) {
+         return (
+           <Box>
+             {/* Dynamic Shift Time Selection */}
+             <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+               <Typography variant="subtitle1" sx={{ mb: 2 }}>שעות משמרות</Typography>
+               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 2 }}>
+                 <Typography variant="subtitle2">בחר משמרת:</Typography>
+                 <Select
+                   value={`${firstShiftTime.start}-${firstShiftTime.end}`}
+                   onChange={(e) => {
+                     const [start, end] = e.target.value.split('-')
+                     handleFirstShiftChange({ start, end })
+                   }}
+                   size="small"
+                   fullWidth
+                 >
+                   <MenuItem value="20:00-00:00">20:00-00:00 → 08:00-12:00</MenuItem>
+                   <MenuItem value="00:00-04:00">00:00-04:00 → 12:00-16:00</MenuItem>
+                   <MenuItem value="04:00-08:00">04:00-08:00 → 16:00-20:00</MenuItem>
+                 </Select>
+               </Box>
+             </Box>
+             
+             <Button 
+               variant="contained" 
+               color="primary" 
+               onClick={generateNextWeekAssignments} 
+               disabled={isGenerating}
+               startIcon={<AutoFixHigh />}
+               sx={{ mb: 2, width: '100%' }}
+             >
+               {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
+             </Button>
+
+             <Alert severity="info" sx={{ mb: 2 }}>
+               <Typography variant="body2">
+                 📱 תצוגה מותאמת לטלפון - כל עמדה בכרטיס נפרד
+               </Typography>
+             </Alert>
+             
+             {demoPositions.map((position) => (
+               <Card key={position} sx={{ mb: 2 }}>
+                 <CardContent>
+                   <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                     {position}
+                   </Typography>
+                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                     {nextWeekDates.map((date, dayIndex) => {
+                       const dateStr = format(date, 'yyyy-MM-dd')
+                       const isFirstSunday = dayIndex === 0
+                       const isLastSunday = dayIndex === 7
+                       
+                       const availableSlots = []
+                       if (isFirstSunday) {
+                         availableSlots.push('first')
+                       } else if (isLastSunday) {
+                         availableSlots.push('second')
+                       } else {
+                         availableSlots.push('first', 'second')
+                       }
+                       
+                       return (
+                         <Box key={dateStr} sx={{ 
+                           p: 1,
+                           border: '1px solid #e0e0e0',
+                           borderRadius: 1
+                         }}>
+                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                             <Box>
+                               <Typography variant="body2" fontWeight="bold">
+                                 {hebrewDays[dayIndex]}
+                               </Typography>
+                               <Typography variant="caption" color="textSecondary">
+                                 {format(date, 'dd/MM')}
+                               </Typography>
+                             </Box>
+                           </Box>
+                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                             {availableSlots.map((slot) => {
+                               const shiftId = `${dateStr}-${position}-${slot}`
+                               const existingShift = shifts.find(s => s.id === shiftId)
+                               const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
+                               
+                               return (
+                                 <Box key={slot} sx={{ 
+                                   display: 'flex', 
+                                   justifyContent: 'space-between', 
+                                   alignItems: 'center',
+                                   p: 1,
+                                   backgroundColor: '#f5f5f5',
+                                   borderRadius: 1
+                                 }}>
+                                   <Typography variant="body2" fontWeight="bold">
+                                     {shiftTime.start}-{shiftTime.end}
+                                   </Typography>
+                                   <Box sx={{ minWidth: 120 }}>
+                                     <Select
+                                       value={existingShift?.workerId || ''}
+                                       onChange={e => handleWorkerChange(shiftId, e.target.value as string)}
+                                       size="small"
+                                       fullWidth
+                                     >
+                                       <MenuItem value="">
+                                         <em>בחר עובד</em>
+                                       </MenuItem>
+                                       {workers.map((w) => (
+                                         <MenuItem key={w.id} value={w.id}>
+                                           {w.name}
+                                         </MenuItem>
+                                       ))}
+                                     </Select>
+                                   </Box>
+                                 </Box>
+                               )
+                             })}
+                           </Box>
+                         </Box>
+                       )
+                     })}
+                   </Box>
+                 </CardContent>
+               </Card>
+             ))}
+           </Box>
+         )
+       }
+
+       return (
+         <Box>
+           {/* Dynamic Shift Time Selection */}
+           <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+             <Typography variant="subtitle1" sx={{ mb: 2 }}>שעות משמרות</Typography>
+             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
+               <Typography variant="subtitle2">בחר משמרת:</Typography>
+               <Select
+                 value={`${firstShiftTime.start}-${firstShiftTime.end}`}
+                 onChange={(e) => {
+                   const [start, end] = e.target.value.split('-')
+                   handleFirstShiftChange({ start, end })
+                 }}
+                 size="small"
+                 sx={{ minWidth: { xs: '100%', sm: 200 } }}
+               >
+                 <MenuItem value="20:00-00:00">20:00-00:00 → 08:00-12:00</MenuItem>
+                 <MenuItem value="00:00-04:00">00:00-04:00 → 12:00-16:00</MenuItem>
+                 <MenuItem value="04:00-08:00">04:00-08:00 → 16:00-20:00</MenuItem>
+               </Select>
+             </Box>
+           </Box>
+           
+           <Button 
+             variant="contained" 
+             color="primary" 
+             onClick={generateNextWeekAssignments} 
+             disabled={isGenerating}
+             startIcon={<AutoFixHigh />}
+             sx={{ mb: 2, width: { xs: '100%', sm: 'auto' } }}
            >
-             <MenuItem value="20:00-00:00">20:00-00:00 → 08:00-12:00</MenuItem>
-             <MenuItem value="00:00-04:00">00:00-04:00 → 12:00-16:00</MenuItem>
-             <MenuItem value="04:00-08:00">04:00-08:00 → 16:00-20:00</MenuItem>
-           </Select>
-         </Box>
-       </Box>
-       
-       <Button 
-         variant="contained" 
-         color="primary" 
-         onClick={generateNextWeekAssignments} 
-         disabled={isGenerating}
-         startIcon={<AutoFixHigh />}
-         sx={{ mb: 2, width: { xs: '100%', sm: 'auto' } }}
-       >
-         {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
-       </Button>
+             {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
+           </Button>
 
-       <Alert severity="success" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
-         <Typography variant="body2">
-           ✅ גרסה חדשה! הטבלה מותאמת למסך הטלפון - {new Date().toLocaleTimeString()}
-         </Typography>
-       </Alert>
+           <Alert severity="success" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
+             <Typography variant="body2">
+               ✅ גרסה חדשה! הטבלה מותאמת למסך הטלפון - {new Date().toLocaleTimeString()}
+             </Typography>
+           </Alert>
 
-                <Box>
+           <Box>
          <TableContainer component={Paper} sx={{ width: '100%' }}>
            <Table size="small">
              <TableHead>
