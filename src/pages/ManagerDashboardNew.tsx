@@ -178,13 +178,13 @@ export default function ManagerDashboardNew() {
            },
          },
        }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 1200, sm: 'auto' } }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 1600, sm: 'auto' } }}>
          <Table size="small">
            <TableHead>
              <TableRow>
-               <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>עמדה</TableCell>
+               <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>עמדה</TableCell>
                {currentWeekDates.map((date, index) => (
-                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 60 }}>
+                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 80 }}>
                    <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                      {hebrewDays[index]}
                    </Typography>
@@ -198,13 +198,13 @@ export default function ManagerDashboardNew() {
            <TableBody>
              {demoPositions.map((position) => (
                <TableRow key={position}>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>{position}</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>{position}</TableCell>
                  {currentWeekDates.map((date) => {
                    const dateStr = format(date, 'yyyy-MM-dd')
                    const shift = shifts.find(s => s.date === dateStr && s.station === position)
                    
                    return (
-                     <TableCell key={dateStr} align="center" sx={{ minWidth: 60 }}>
+                     <TableCell key={dateStr} align="center" sx={{ minWidth: 80 }}>
                        {shift ? (
                          <Select
                            value={shift.workerId}
@@ -299,13 +299,13 @@ export default function ManagerDashboardNew() {
            },
          },
        }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 1200, sm: 'auto' } }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 1600, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
                <TableRow>
-                 <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>עמדה</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>עמדה</TableCell>
                  {nextWeekDates.map((date, index) => (
-                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 60 }}>
+                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', minWidth: 80 }}>
                      <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
                        {hebrewDays[index]}
                      </Typography>
@@ -318,25 +318,25 @@ export default function ManagerDashboardNew() {
              </TableHead>
              <TableBody>
                {demoPositions.map((position) => (
-                 <TableRow key={position}>
-                   <TableCell sx={{ fontWeight: 'bold', minWidth: 80 }}>{position}</TableCell>
-                   {nextWeekDates.map((date, dayIndex) => {
-                     const dateStr = format(date, 'yyyy-MM-dd')
-                     const isFirstSunday = dayIndex === 0
-                     const isLastSunday = dayIndex === 7
-                     
-                     // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
-                     const availableSlots = []
-                     if (isFirstSunday) {
-                       availableSlots.push('first')
-                     } else if (isLastSunday) {
-                       availableSlots.push('second')
-                     } else {
-                       availableSlots.push('first', 'second')
-                     }
+                                <TableRow key={position}>
+                 <TableCell sx={{ fontWeight: 'bold', minWidth: 100 }}>{position}</TableCell>
+                 {nextWeekDates.map((date, dayIndex) => {
+                   const dateStr = format(date, 'yyyy-MM-dd')
+                   const isFirstSunday = dayIndex === 0
+                   const isLastSunday = dayIndex === 7
                    
-                     return (
-                       <TableCell key={dateStr} align="center" sx={{ minWidth: 60 }}>
+                   // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
+                   const availableSlots = []
+                   if (isFirstSunday) {
+                     availableSlots.push('first')
+                   } else if (isLastSunday) {
+                     availableSlots.push('second')
+                   } else {
+                     availableSlots.push('first', 'second')
+                   }
+                 
+                   return (
+                     <TableCell key={dateStr} align="center" sx={{ minWidth: 80 }}>
                          {availableSlots.map((slot, slotIndex) => {
                            const shiftId = `${dateStr}-${position}-${slot}`
                            const existingShift = shifts.find(s => s.id === shiftId)
