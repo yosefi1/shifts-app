@@ -161,25 +161,7 @@ export default function ManagerDashboardNew() {
              💡 גלול ימינה ושמאלה כדי לראות את כל הטבלה
            </Typography>
          </Alert>
-         <Box sx={{ 
-         overflowX: 'auto', 
-         touchAction: 'pan-x',
-         WebkitOverflowScrolling: 'touch',
-         '&::-webkit-scrollbar': {
-           height: 8,
-         },
-         '&::-webkit-scrollbar-track': {
-           backgroundColor: '#f1f1f1',
-           borderRadius: 4,
-         },
-         '&::-webkit-scrollbar-thumb': {
-           backgroundColor: '#888',
-           borderRadius: 4,
-           '&:hover': {
-             backgroundColor: '#555',
-           },
-         },
-       }}>
+         <Box className="table-scroll-container">
          <TableContainer component={Paper} sx={{ minWidth: { xs: 3000, sm: 'auto' } }}>
          <Table size="small">
            <TableHead>
@@ -284,25 +266,7 @@ export default function ManagerDashboardNew() {
          </Typography>
        </Alert>
 
-                <Box sx={{ 
-           overflowX: 'auto', 
-           touchAction: 'pan-x',
-           WebkitOverflowScrolling: 'touch',
-           '&::-webkit-scrollbar': {
-             height: 8,
-           },
-           '&::-webkit-scrollbar-track': {
-             backgroundColor: '#f1f1f1',
-             borderRadius: 4,
-           },
-           '&::-webkit-scrollbar-thumb': {
-             backgroundColor: '#888',
-             borderRadius: 4,
-             '&:hover': {
-               backgroundColor: '#555',
-             },
-           },
-         }}>
+                <Box className="table-scroll-container">
          <TableContainer component={Paper} sx={{ minWidth: { xs: 3000, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
@@ -419,25 +383,7 @@ export default function ManagerDashboardNew() {
      })
 
             return (
-         <Box sx={{ 
-           overflowX: 'auto', 
-           touchAction: 'pan-x',
-           WebkitOverflowScrolling: 'touch',
-           '&::-webkit-scrollbar': {
-             height: 8,
-           },
-           '&::-webkit-scrollbar-track': {
-             backgroundColor: '#f1f1f1',
-             borderRadius: 4,
-           },
-           '&::-webkit-scrollbar-thumb': {
-             backgroundColor: '#888',
-             borderRadius: 4,
-             '&:hover': {
-               backgroundColor: '#555',
-             },
-           },
-         }}>
+         <Box className="table-scroll-container">
            <TableContainer component={Paper} sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
