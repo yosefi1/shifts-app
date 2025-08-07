@@ -154,9 +154,31 @@ export default function ManagerDashboardNew() {
     )
   }
 
-     const renderCurrentWeekTable = () => (
-     <Box sx={{ overflowX: 'auto' }}>
-       <TableContainer component={Paper} sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
+          const renderCurrentWeekTable = () => (
+       <>
+         <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
+           <Typography variant="body2">
+             💡 גלול ימינה ושמאלה כדי לראות את כל הטבלה
+           </Typography>
+         </Alert>
+         <Box sx={{ 
+         overflowX: 'auto', 
+         '&::-webkit-scrollbar': {
+           height: 8,
+         },
+         '&::-webkit-scrollbar-track': {
+           backgroundColor: '#f1f1f1',
+           borderRadius: 4,
+         },
+         '&::-webkit-scrollbar-thumb': {
+           backgroundColor: '#888',
+           borderRadius: 4,
+           '&:hover': {
+             backgroundColor: '#555',
+           },
+         },
+       }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 1200, sm: 'auto' } }}>
          <Table size="small">
            <TableHead>
              <TableRow>
@@ -214,10 +236,11 @@ export default function ManagerDashboardNew() {
                </TableRow>
              ))}
            </TableBody>
-         </Table>
-       </TableContainer>
-     </Box>
-   )
+                    </Table>
+         </TableContainer>
+       </Box>
+       </>
+     )
 
      const renderNextWeekTable = () => (
      <Box>
@@ -253,8 +276,30 @@ export default function ManagerDashboardNew() {
          {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
        </Button>
 
-       <Box sx={{ overflowX: 'auto' }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
+       <Alert severity="info" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
+         <Typography variant="body2">
+           💡 גלול ימינה ושמאלה כדי לראות את כל הטבלה
+         </Typography>
+       </Alert>
+
+       <Box sx={{ 
+         overflowX: 'auto', 
+         '&::-webkit-scrollbar': {
+           height: 8,
+         },
+         '&::-webkit-scrollbar-track': {
+           backgroundColor: '#f1f1f1',
+           borderRadius: 4,
+         },
+         '&::-webkit-scrollbar-thumb': {
+           backgroundColor: '#888',
+           borderRadius: 4,
+           '&:hover': {
+             backgroundColor: '#555',
+           },
+         },
+       }}>
+         <TableContainer component={Paper} sx={{ minWidth: { xs: 1200, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
                <TableRow>
@@ -369,9 +414,25 @@ export default function ManagerDashboardNew() {
        }
      })
 
-     return (
-       <Box sx={{ overflowX: 'auto' }}>
-         <TableContainer component={Paper} sx={{ minWidth: { xs: 600, sm: 'auto' } }}>
+            return (
+         <Box sx={{ 
+           overflowX: 'auto', 
+           '&::-webkit-scrollbar': {
+             height: 8,
+           },
+           '&::-webkit-scrollbar-track': {
+             backgroundColor: '#f1f1f1',
+             borderRadius: 4,
+           },
+           '&::-webkit-scrollbar-thumb': {
+             backgroundColor: '#888',
+             borderRadius: 4,
+             '&:hover': {
+               backgroundColor: '#555',
+             },
+           },
+         }}>
+           <TableContainer component={Paper} sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
            <Table size="small">
              <TableHead>
                <TableRow>
