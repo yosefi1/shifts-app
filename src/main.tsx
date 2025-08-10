@@ -17,8 +17,7 @@ const globalStyles = `
   .table-scroll-container {
     -webkit-overflow-scrolling: touch !important;
     overflow-x: auto !important;
-    overflow-y: hidden !important;
-    touch-action: pan-x !important;
+    /* allow natural vertical scroll and pinch-zoom */
     -webkit-transform: translateZ(0) !important;
     transform: translateZ(0) !important;
   }

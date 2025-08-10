@@ -230,7 +230,11 @@ export default function ManagerDashboardNew() {
 
     return (
       <Box>
-        <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <TableContainer
+          component={Paper}
+          className="table-scroll-container"
+          sx={{ width: '100%', overflowX: 'auto' }}
+        >
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -464,7 +468,11 @@ export default function ManagerDashboardNew() {
         </Alert>
 
         <Box>
-          <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <TableContainer
+            component={Paper}
+            className="table-scroll-container"
+            sx={{ width: '100%', overflowX: 'auto' }}
+          >
             <Table size="small">
               <TableHead>
                 <TableRow>
@@ -582,7 +590,11 @@ export default function ManagerDashboardNew() {
 
     return (
       <Box>
-        <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <TableContainer
+          component={Paper}
+          className="table-scroll-container"
+          sx={{ width: '100%', overflowX: 'auto' }}
+        >
           <Table size="small">
             <TableHead>
               <TableRow>

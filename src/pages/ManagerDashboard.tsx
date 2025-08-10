@@ -119,7 +119,11 @@ export default function ManagerDashboard() {
   }
 
   const renderCurrentWeekTable = () => (
-    <TableContainer component={Paper}>
+    <TableContainer
+      component={Paper}
+      className="table-scroll-container"
+      sx={{ width: '100%', overflowX: 'auto' }}
+    >
       <Table>
         <TableHead>
           <TableRow>
@@ -187,7 +191,11 @@ export default function ManagerDashboard() {
         {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
       </Button>
 
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        className="table-scroll-container"
+        sx={{ width: '100%', overflowX: 'auto' }}
+      >
         <Table>
           <TableHead>
             <TableRow>
@@ -247,7 +255,11 @@ export default function ManagerDashboard() {
     })
 
     return (
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        className="table-scroll-container"
+        sx={{ width: '100%', overflowX: 'auto' }}
+      >
         <Table>
           <TableHead>
             <TableRow>
