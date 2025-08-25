@@ -22,7 +22,7 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material'
-import { ArrowBack, AutoFixHigh, Visibility, History, Edit, Delete } from '@mui/icons-material'
+import { ArrowBack, AutoFixHigh, Visibility, History, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { useAuthStore } from '../stores/authStore'
@@ -74,7 +74,7 @@ export default function ManagerDashboardNew() {
   const currentWeekEnd = addDays(currentWeekStart, 6)
   const isCurrentWeekActive = now <= currentWeekEnd
   
-  const nextWeekStart = startOfWeek(addDays(now, 7))
+
 
   // Auto-set tab based on current week status
   const [tabValue, setTabValue] = useState(isCurrentWeekActive ? 0 : 1)

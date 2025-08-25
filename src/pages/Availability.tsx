@@ -389,9 +389,8 @@ export default function Availability() {
             
             toast.success('הזמינות והעדפות נשמרו בהצלחה!')
           }}
-          disabled={isSubmitting}
         >
-          {isSubmitting ? 'שומר...' : 'שמור זמינות והעדפות'}
+          שמור זמינות והעדפות
         </Button>
         <Button
           variant="outlined"
