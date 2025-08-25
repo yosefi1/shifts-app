@@ -27,7 +27,7 @@ import {
   InputLabel,
   Divider
 } from '@mui/material'
-import { ArrowBack, Info, Edit, Block, Delete } from '@mui/icons-material'
+import { ArrowBack, Info, Edit, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useShiftsStore } from '../stores/shiftsStore'
@@ -36,8 +36,7 @@ import toast from 'react-hot-toast'
 
 export default function Availability() {
   const { user } = useAuthStore()
-  const { constraints, addConstraint, removeConstraint, getWorkerConstraints, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { constraints, addConstraint, removeConstraint, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
   const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,
     date: '',
@@ -202,7 +201,6 @@ export default function Availability() {
                     </Typography>
                   </TableCell>
                   {timeSlots.map((slot) => {
-                    const key = `${dateStr}-${slot.id}`
                     const isChecked = hasConstraint(dateStr, slot.id)
                     const constraint = getConstraintForShift(dateStr, slot.id)
                     

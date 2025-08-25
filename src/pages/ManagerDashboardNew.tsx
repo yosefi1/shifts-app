@@ -22,7 +22,7 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material'
-import { ArrowBack, AutoFixHigh, Visibility, History, People, Add, Edit, Delete } from '@mui/icons-material'
+import { ArrowBack, AutoFixHigh, Visibility, History, Edit, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { useAuthStore } from '../stores/authStore'
@@ -31,7 +31,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 export default function ManagerDashboardNew() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const { shifts, setShifts, availability, constraints, getWorkerPreferences } = useShiftsStore()
+  const { shifts, setShifts, constraints, getWorkerPreferences } = useShiftsStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [firstShiftTime, setFirstShiftTime] = useState({ start: '20:00', end: '00:00' })
   
@@ -74,16 +74,7 @@ export default function ManagerDashboardNew() {
   const currentWeekEnd = addDays(currentWeekStart, 6)
   const isCurrentWeekActive = now <= currentWeekEnd
   
-  const currentWeekDates = eachDayOfInterval({
-    start: currentWeekStart,
-    end: addDays(currentWeekStart, 7),
-  })
-
   const nextWeekStart = startOfWeek(addDays(now, 7))
-  const nextWeekDates = eachDayOfInterval({
-    start: nextWeekStart,
-    end: addDays(nextWeekStart, 7),
-  })
 
   // Auto-set tab based on current week status
   const [tabValue, setTabValue] = useState(isCurrentWeekActive ? 0 : 1)
