@@ -1,23 +1,21 @@
 import { useState } from 'react'
 import { Box, Card, CardContent, Typography, TextField, Button } from '@mui/material'
-
-const users: Record<string, { id: string; name: string; role: string }> = {
-  '1': { id: '1', name: 'מנהל', role: 'manager' },
-  '2': { id: '2', name: 'עובד 2', role: 'worker' },
-  '3': { id: '3', name: 'עובד 3', role: 'worker' },
-}
+import { useAuthStore } from '../stores/authStore'
+import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
   const [personalNumber, setPersonalNumber] = useState('')
   const [error, setError] = useState('')
+  const { login } = useAuthStore()
+  const navigate = useNavigate()
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    if (users[personalNumber]) {
-      localStorage.setItem('user', JSON.stringify(users[personalNumber]))
-      window.location.reload()
+    const user = login(personalNumber)
+    if (user) {
+      navigate('/')
     } else {
-      setError('מספר אישי לא תקין')
+      setError('מספר אישי לא תקין (0-17)')
     }
   }
 
@@ -27,6 +25,9 @@ export default function Login() {
         <CardContent>
           <Typography variant="h5" align="center" gutterBottom>
             כניסה למערכת
+          </Typography>
+          <Typography variant="body2" align="center" color="textSecondary" sx={{ mb: 2 }}>
+            מספר אישי: 0 (מנהל) או 1-17 (עובדים)
           </Typography>
           <form onSubmit={handleLogin}>
             <TextField

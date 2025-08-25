@@ -1,4 +1,5 @@
 import { Box, Typography, Card, CardContent, Button, Grid } from '@mui/material'
+import { People } from '@mui/icons-material'
 import { useAuthStore } from '../stores/authStore'
 import { useNavigate } from 'react-router-dom'
 
@@ -13,7 +14,7 @@ export default function Dashboard() {
           ברוך הבא, {user?.name}
         </Typography>
         <Grid container spacing={2} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
                 <Typography variant="h6">ניהול שיבוצים</Typography>
@@ -21,12 +22,28 @@ export default function Dashboard() {
                   צפייה בשיבוצים נוכחיים, יצירת שיבוצים חדשים וניהול אילוצי עובדים
                 </Typography>
                 <Button variant="contained" fullWidth onClick={() => navigate('/manager')}>
-                  עבור לניהול
+                  עבור לניהול שיבוצים
                 </Button>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <People />
+                  ניהול עובדים
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  הוספה, עריכה ומחיקה של עובדים במערכת
+                </Typography>
+                <Button variant="contained" fullWidth onClick={() => navigate('/workers')}>
+                  עבור לניהול עובדים
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
             <Card>
               <CardContent>
                 <Typography variant="h6">סטטיסטיקות</Typography>

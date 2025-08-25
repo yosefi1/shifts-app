@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Availability from './pages/Availability'
 import Shifts from './pages/Shifts'
 import ManagerDashboard from './pages/ManagerDashboardNew'
+import Workers from './pages/Workers'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/availability" element={<Availability />} />
         <Route path="/shifts" element={<Shifts />} />
         {user.role === 'manager' && <Route path="/manager" element={<ManagerDashboard />} />}
+        {user.role === 'manager' && <Route path="/workers" element={<Workers />} />}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>

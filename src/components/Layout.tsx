@@ -117,7 +117,7 @@ export default function Layout({ children }: LayoutProps) {
           transition: 'none',
         }}
       >
-        <Toolbar>
+        <Toolbar disableGutters>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>
               {user?.name}
@@ -197,14 +197,14 @@ export default function Layout({ children }: LayoutProps) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 0,
           width: { md: `calc(100% - ${desktopOpen ? drawerWidth : 0}px)` },
           ml: { md: `${desktopOpen ? drawerWidth : 0}px` },
           transition: 'none',
           order: { md: 2 }
         }}
       >
-        <Toolbar />
+        <Toolbar disableGutters />
         {children}
       </Box>
       <Menu

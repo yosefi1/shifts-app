@@ -22,18 +22,20 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material'
-import { ArrowBack, AutoFixHigh, Visibility, History } from '@mui/icons-material'
+import { ArrowBack, AutoFixHigh, Visibility, History, People, Add, Edit, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
+import { useAuthStore } from '../stores/authStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
 export default function ManagerDashboardNew() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const { shifts, setShifts, availability } = useShiftsStore()
-  const [tabValue, setTabValue] = useState(0)
+  const { shifts, setShifts, availability, constraints, getWorkerPreferences } = useShiftsStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [firstShiftTime, setFirstShiftTime] = useState({ start: '20:00', end: '00:00' })
+  
+
   const [shiftTimes, setShiftTimes] = useState({
     first: { start: '20:00', end: '00:00' },
     second: { start: '08:00', end: '12:00' }
@@ -66,25 +68,49 @@ export default function ManagerDashboardNew() {
   }
   const navigate = useNavigate()
 
-  const currentWeekStart = startOfWeek(new Date())
+  // Auto-detect if we should show current week or next week
+  const now = new Date()
+  const currentWeekStart = startOfWeek(now)
+  const currentWeekEnd = addDays(currentWeekStart, 6)
+  const isCurrentWeekActive = now <= currentWeekEnd
+  
   const currentWeekDates = eachDayOfInterval({
     start: currentWeekStart,
     end: addDays(currentWeekStart, 7),
   })
 
-  const nextWeekStart = startOfWeek(addDays(new Date(), 7))
+  const nextWeekStart = startOfWeek(addDays(now, 7))
   const nextWeekDates = eachDayOfInterval({
     start: nextWeekStart,
     end: addDays(nextWeekStart, 7),
   })
 
+  // Auto-set tab based on current week status
+  const [tabValue, setTabValue] = useState(isCurrentWeekActive ? 0 : 1)
+  
+  // Week navigation state
+  const [selectedWeekOffset, setSelectedWeekOffset] = useState(0)
+  
+  // Calculate the selected week dates
+  const selectedWeekStart = startOfWeek(addDays(now, selectedWeekOffset * 7))
+  const selectedWeekDates = eachDayOfInterval({
+    start: selectedWeekStart,
+    end: addDays(selectedWeekStart, 7),
+  })
+  
+  const getWeekLabel = (offset: number) => {
+    if (offset === 0) return 'שבוע נוכחי'
+    if (offset === 1) return 'שבוע הבא'
+    if (offset === -1) return 'שבוע שעבר'
+    return `שבוע ${offset > 0 ? '+' : ''}${offset}`
+  }
+
   const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
 
-  // Demo workers
-  const workers = [
-    { id: '2', name: 'עובד 2' },
-    { id: '3', name: 'עובד 3' },
-  ]
+  // Get real workers from auth store
+  const { getAllUsers } = useAuthStore()
+  const allUsers = getAllUsers()
+  const workers = allUsers.filter(user => user.role === 'worker')
 
   // Demo positions (based on the photo)
   const demoPositions = [
@@ -95,17 +121,39 @@ export default function ManagerDashboardNew() {
     setTabValue(newValue)
   }
 
-  // Auto-assignment algorithm
+  // Smart auto-assignment algorithm
   const generateNextWeekAssignments = () => {
     setIsGenerating(true)
     const newShifts: any[] = []
     
-    nextWeekDates.forEach((date, dayIndex) => {
+    // Positions that should not be auto-assigned (manager assigns manually)
+    const manualPositions = ['עתודות', 'אפטרים']
+    
+    // Positions that require male workers only
+    const maleOnlyPositions = ['סיור 10', 'סיור 10א']
+    
+    // Track worker assignments for fairness
+    const workerAssignments: { [workerId: string]: { [position: string]: number } } = {}
+    
+    // Initialize worker assignments tracking
+    workers.forEach(worker => {
+      workerAssignments[worker.id] = {}
+      demoPositions.forEach(position => {
+        workerAssignments[worker.id][position] = 0
+      })
+    })
+    
+    selectedWeekDates.forEach((date, dayIndex) => {
       const dateStr = format(date, 'yyyy-MM-dd')
       const isFirstSunday = dayIndex === 0
       const isLastSunday = dayIndex === 7
       
-      demoPositions.forEach((position, positionIndex) => {
+      demoPositions.forEach((position) => {
+        // Skip manual positions
+        if (manualPositions.includes(position)) {
+          return
+        }
+        
         // Determine available time slots for this day
         const availableSlots = []
         if (isFirstSunday) {
@@ -118,19 +166,61 @@ export default function ManagerDashboardNew() {
         
         availableSlots.forEach((slot) => {
           // Find available workers for this slot
-          const availableWorkers = workers.filter(worker => {
-            const workerAvailability = availability.find(avail => 
-              avail.workerId === worker.id && 
-              avail.date === dateStr && 
-              avail.timeSlot === slot
+          let availableWorkers = workers.filter(worker => {
+            // Check if worker has constraints for this date/slot
+            const hasConstraint = constraints.some(c => 
+              c.workerId === worker.id && 
+              c.date === dateStr && 
+              c.timeSlot === slot &&
+              c.isBlocked
             )
-            return !workerAvailability || workerAvailability.isAvailable
+            
+            if (hasConstraint) return false
+            
+            // For male-only positions, filter by gender
+            if (maleOnlyPositions.includes(position) && worker.gender !== 'male') {
+              return false
+            }
+            
+            return true
           })
           
-          // Assign worker (simple round-robin for demo)
-          const assignedWorker = availableWorkers[positionIndex % availableWorkers.length] || availableWorkers[0]
+          if (availableWorkers.length === 0) return
+          
+          // Score workers based on preferences and fairness
+          const scoredWorkers = availableWorkers.map(worker => {
+            let score = 0
+            
+            // Get worker preferences
+            const workerPrefs = getWorkerPreferences(worker.id)
+            
+            // Preference scoring (higher score = better match)
+            if (workerPrefs) {
+              if (workerPrefs.preferPosition1 === position) score += 10
+              else if (workerPrefs.preferPosition2 === position) score += 6
+              else if (workerPrefs.preferPosition3 === position) score += 3
+            }
+            
+            // Fairness scoring (fewer assignments = higher score)
+            const currentAssignments = workerAssignments[worker.id][position] || 0
+            score += (10 - currentAssignments) * 2 // Bonus for fewer assignments
+            
+            // Random factor to break ties
+            score += Math.random()
+            
+            return { worker, score }
+          })
+          
+          // Sort by score (highest first)
+          scoredWorkers.sort((a, b) => b.score - a.score)
+          
+          const assignedWorker = scoredWorkers[0]?.worker
           
           if (assignedWorker) {
+            // Update assignment tracking
+            workerAssignments[assignedWorker.id][position] = 
+              (workerAssignments[assignedWorker.id][position] || 0) + 1
+            
             const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
             newShifts.push({
               id: `${dateStr}-${position}-${slot}`,
@@ -176,7 +266,7 @@ export default function ManagerDashboardNew() {
                   {position}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {currentWeekDates.map((date, index) => {
+                                     {selectedWeekDates.map((date, index) => {
                     const dateStr = format(date, 'yyyy-MM-dd')
                     const shift = shifts.find(s => s.date === dateStr && s.station === position)
                     
@@ -233,29 +323,36 @@ export default function ManagerDashboardNew() {
         <TableContainer
           component={Paper}
           className="table-scroll-container"
-          sx={{ width: '100%', overflowX: 'auto' }}
+          sx={{ 
+            width: '100%', 
+            overflowX: 'auto',
+            '& th:first-of-type, & td:first-of-type': { pr: 0 }
+          }}
         >
-          <Table size="small">
+          <Table size="small" sx={{ 
+            '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+            '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+          }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
-                {currentWeekDates.map((date, index) => (
-                  <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
-                    <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
-                      {hebrewDays[index]}
-                    </Typography>
-                    <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
-                      {format(date, 'dd/MM')}
-                    </Typography>
-                  </TableCell>
-                ))}
+                                 <TableCell sx={{ fontWeight: 'bold', width: '20%', fontSize: '1.1rem' }}>עמדה</TableCell>
+                                  {selectedWeekDates.map((date, index) => (
+                   <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%', pl: index === 0 ? 0 : undefined }}>
+                     <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' }, fontWeight: 'bold' }}>
+                       {hebrewDays[index]}
+                     </Typography>
+                     <Typography variant="caption" display="block" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' }, fontWeight: 'bold' }}>
+                       {format(date, 'dd/MM')}
+                     </Typography>
+                   </TableCell>
+                 ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {demoPositions.map((position) => (
                 <TableRow key={position}>
                   <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
-                  {currentWeekDates.map((date) => {
+                                     {selectedWeekDates.map((date) => {
                     const dateStr = format(date, 'yyyy-MM-dd')
                     const shift = shifts.find(s => s.date === dateStr && s.station === position)
                     
@@ -323,16 +420,39 @@ export default function ManagerDashboardNew() {
             </Box>
           </Box>
           
-          <Button 
-            variant="contained" 
-            color="primary" 
-            onClick={generateNextWeekAssignments} 
-            disabled={isGenerating}
-            startIcon={<AutoFixHigh />}
-            sx={{ mb: 2, width: '100%' }}
-          >
-            {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={generateNextWeekAssignments} 
+              disabled={isGenerating}
+              startIcon={<AutoFixHigh />}
+              sx={{ flex: 1 }}
+            >
+              {isGenerating ? 'יוצר שיבוצים חכם...' : 'יצירת שיבוצים חכם אוטומטי'}
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="error" 
+              onClick={() => setShifts([])}
+              disabled={isGenerating}
+              startIcon={<Delete />}
+              sx={{ minWidth: '120px' }}
+            >
+              נקה הכל
+            </Button>
+          </Box>
+
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>אלגוריתם חכם:</strong> המערכת מתחשבת ב:
+              <br />• אילוצי עובדים (מתי לא יכולים לעבוד)
+              <br />• העדפות עובדים (מיקומים מועדפים)
+              <br />• הוגנות (חלוקה מאוזנת של משמרות)
+              <br />• דרישות מיוחדות (סיור 10/10א - גברים בלבד)
+              <br />• עתודות ואפטרים - לא מוקצים אוטומטית
+            </Typography>
+          </Alert>
 
           <Alert severity="info" sx={{ mb: 2 }}>
             <Typography variant="body2">
@@ -347,7 +467,7 @@ export default function ManagerDashboardNew() {
                   {position}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  {nextWeekDates.map((date, dayIndex) => {
+                                     {selectedWeekDates.map((date, dayIndex) => {
                     const dateStr = format(date, 'yyyy-MM-dd')
                     const isFirstSunday = dayIndex === 0
                     const isLastSunday = dayIndex === 7
@@ -450,16 +570,28 @@ export default function ManagerDashboardNew() {
           </Box>
         </Box>
         
-        <Button 
-          variant="contained" 
-          color="primary" 
-          onClick={generateNextWeekAssignments} 
-          disabled={isGenerating}
-          startIcon={<AutoFixHigh />}
-          sx={{ mb: 2, width: { xs: '100%', sm: 'auto' } }}
-        >
-          {isGenerating ? 'יוצר שיבוצים...' : 'יצירת שיבוצים אוטומטית'}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={generateNextWeekAssignments} 
+            disabled={isGenerating}
+            startIcon={<AutoFixHigh />}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            {isGenerating ? 'יוצר שיבוצים חכם...' : 'יצירת שיבוצים חכם אוטומטי'}
+          </Button>
+          <Button 
+            variant="outlined" 
+            color="error" 
+            onClick={() => setShifts([])}
+            disabled={isGenerating}
+            startIcon={<Delete />}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            נקה הכל
+          </Button>
+        </Box>
 
         <Alert severity="success" sx={{ mb: 2, display: { xs: 'block', sm: 'none' } }}>
           <Typography variant="body2">
@@ -471,14 +603,21 @@ export default function ManagerDashboardNew() {
           <TableContainer
             component={Paper}
             className="table-scroll-container"
-            sx={{ width: '100%', overflowX: 'auto' }}
+            sx={{ 
+              width: '100%', 
+              overflowX: 'auto',
+              '& th:first-of-type, & td:first-of-type': { pr: 0 }
+            }}
           >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
-                  {nextWeekDates.map((date, index) => (
-                    <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
+                      <Table size="small" sx={{ 
+            '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+            '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+          }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
+                                                                           {selectedWeekDates.map((date, index) => (
+                     <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%', pl: index === 0 ? 0 : undefined }}>
                       <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                         {hebrewDays[index]}
                       </Typography>
@@ -492,8 +631,8 @@ export default function ManagerDashboardNew() {
               <TableBody>
                 {demoPositions.map((position) => (
                   <TableRow key={position}>
-                    <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>{position}</TableCell>
-                    {nextWeekDates.map((date, dayIndex) => {
+                    <TableCell sx={{ fontWeight: 'bold', width: '20%', pr: 0, pl: 0 }}>{position}</TableCell>
+                    {selectedWeekDates.map((date, dayIndex) => {
                       const dateStr = format(date, 'yyyy-MM-dd')
                       const isFirstSunday = dayIndex === 0
                       const isLastSunday = dayIndex === 7
@@ -575,58 +714,77 @@ export default function ManagerDashboardNew() {
             </Table>
           </TableContainer>
         </Box>
+        
+
       </Box>
     )
   }
 
   const renderConstraintsTable = () => {
-    const workerConstraints = workers.map(worker => {
-      const workerAvail = availability.filter(avail => avail.workerId === worker.id)
+    // Use the already fetched data from the top level
+    const allUsers = getAllUsers()
+    
+    const workerConstraints = allUsers.filter(user => user.role === 'worker').map(worker => {
+      const workerConstraints = constraints.filter(c => c.workerId === worker.id)
       return {
         worker,
-        constraints: workerAvail.filter(avail => !avail.isAvailable)
+        constraints: workerConstraints
       }
     })
 
     return (
       <Box>
+
+        
+        
+        
         <TableContainer
           component={Paper}
           className="table-scroll-container"
-          sx={{ width: '100%', overflowX: 'auto' }}
+          sx={{ 
+            width: '100%', 
+            '& th:first-of-type, & td:first-of-type': { pr: 0 }
+          }}
         >
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>עובד</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>תאריך</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>משמרת</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>הסבר</TableCell>
-              </TableRow>
-            </TableHead>
+          <Table size="small" sx={{ 
+            '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+            '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+          }}>
+                         <TableHead>
+               <TableRow>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%', pr: 0, pl: 0, textAlign: 'center' }}>עובד</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%', textAlign: 'center' }}>תאריך</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '20%', textAlign: 'center' }}>משמרת</TableCell>
+                 <TableCell sx={{ fontWeight: 'bold', width: '40%', textAlign: 'center' }}>הסבר</TableCell>
+               </TableRow>
+             </TableHead>
             <TableBody>
               {workerConstraints.map(({ worker, constraints }) =>
                 constraints.length === 0 ? (
-                  <TableRow key={worker.id}>
-                    <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' } }}>{worker.name}</TableCell>
-                    <TableCell colSpan={3} align="center">
-                      <Chip label="אין אילוצים" color="success" size="small" />
-                    </TableCell>
-                  </TableRow>
+                                     <TableRow key={worker.id}>
+                     <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '20%', textAlign: 'center' }}>{worker.name}</TableCell>
+                     <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '20%', textAlign: 'center' }}>
+                       <Chip label="אין אילוצים" color="success" size="small" />
+                     </TableCell>
+                     <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '20%', textAlign: 'center' }}></TableCell>
+                     <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '40%', textAlign: 'center' }}></TableCell>
+                   </TableRow>
                 ) : (
                   constraints.map((constraint) => (
-                    <TableRow key={constraint.id}>
-                      <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' } }}>{worker.name}</TableCell>
-                      <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' } }}>
-                        {format(new Date(constraint.date), 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' } }}>
-                        {constraint.timeSlot === 'morning' ? '08:00-12:00' : '20:00-00:00'}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' } }}>
-                        {constraint.note || 'לא צוין הסבר'}
-                      </TableCell>
-                    </TableRow>
+                                         <TableRow key={constraint.id}>
+                       <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, pr: 0, pl: 0, width: '20%', textAlign: 'center' }}>{worker.name}</TableCell>
+                       <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '20%', textAlign: 'center' }}>
+                         {format(new Date(constraint.date), 'dd/MM/yyyy')}
+                       </TableCell>
+                       <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '20%', textAlign: 'center' }}>
+                         {constraint.timeSlot === 'second' ? '08:00-12:00' : 
+                          constraint.timeSlot === 'first' ? '20:00-00:00' : 
+                          constraint.timeSlot === 'morning' ? '08:00-12:00' : '20:00-00:00'}
+                       </TableCell>
+                       <TableCell sx={{ fontSize: { xs: '0.8rem', sm: 'inherit' }, width: '40%', textAlign: 'center' }}>
+                         {constraint.reason || 'לא צוין הסבר'}
+                       </TableCell>
+                     </TableRow>
                   ))
                 )
               )}
@@ -636,6 +794,8 @@ export default function ManagerDashboardNew() {
       </Box>
     )
   }
+
+
 
   const renderPreviousAssignments = () => (
     <Alert severity="info">
@@ -651,40 +811,70 @@ export default function ManagerDashboardNew() {
         <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h4" sx={{ color: 'blue', fontSize: '2rem' }}>
-          🎯 ניהול שיבוצים - מנהל {new Date().toLocaleTimeString()} 🎯
-        </Typography>
+                 <Typography variant="h4" sx={{ color: 'blue', fontSize: '2rem' }}>
+           🎯 ניהול שיבוצים - מנהל {new Date().toLocaleTimeString()} - Fixed 🎯
+         </Typography>
       </Box>
 
-      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
-        <Tab 
-          icon={<Visibility />} 
-          label="שבוע נוכחי" 
-          iconPosition="start"
-        />
-        <Tab 
-          icon={<AutoFixHigh />} 
-          label="שיבוץ הבא" 
-          iconPosition="start"
-        />
-        <Tab 
-          icon={<Visibility />} 
-          label="אילוצים" 
-          iconPosition="start"
-        />
-        <Tab 
-          icon={<History />} 
-          label="היסטוריה" 
-          iconPosition="start"
-        />
-      </Tabs>
+             {/* Week Navigation */}
+       <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+         <Button
+           variant="outlined"
+           size="small"
+           onClick={() => setSelectedWeekOffset(prev => prev - 1)}
+           disabled={selectedWeekOffset <= -4}
+         >
+           שבוע קודם
+         </Button>
+         <Typography variant="h6" sx={{ minWidth: 120, textAlign: 'center' }}>
+           {getWeekLabel(selectedWeekOffset)}
+         </Typography>
+         <Button
+           variant="outlined"
+           size="small"
+           onClick={() => setSelectedWeekOffset(prev => prev + 1)}
+           disabled={selectedWeekOffset >= 4}
+         >
+           שבוע הבא
+         </Button>
+         <Button
+           variant="outlined"
+           size="small"
+           onClick={() => setSelectedWeekOffset(0)}
+         >
+           שבוע נוכחי
+         </Button>
+       </Box>
 
-      <Box sx={{ mt: 2 }}>
-        {tabValue === 0 && renderCurrentWeekTable()}
-        {tabValue === 1 && renderNextWeekTable()}
-        {tabValue === 2 && renderConstraintsTable()}
-        {tabValue === 3 && renderPreviousAssignments()}
-      </Box>
+               <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3, px: 0 }}>
+          <Tab 
+            icon={<Visibility />} 
+            label="שבוע נוכחי" 
+            iconPosition="start"
+          />
+          <Tab 
+            icon={<AutoFixHigh />} 
+            label="שיבוץ הבא" 
+            iconPosition="start"
+          />
+          <Tab 
+            icon={<Visibility />} 
+            label="אילוצים" 
+            iconPosition="start"
+          />
+          <Tab 
+            icon={<History />} 
+            label="היסטוריה" 
+            iconPosition="start"
+          />
+        </Tabs>
+
+                     <Box sx={{ mt: 2, px: 0 }}>
+          {tabValue === 0 && renderCurrentWeekTable()}
+          {tabValue === 1 && renderNextWeekTable()}
+          {tabValue === 2 && renderConstraintsTable()}
+          {tabValue === 3 && renderPreviousAssignments()}
+        </Box>
     </Box>
   )
 }

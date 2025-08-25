@@ -122,9 +122,16 @@ export default function ManagerDashboard() {
     <TableContainer
       component={Paper}
       className="table-scroll-container"
-      sx={{ width: '100%', overflowX: 'auto' }}
+      sx={{ 
+        width: '100%', 
+        overflowX: 'auto',
+        '& th:first-of-type, & td:first-of-type': { pr: 0 }
+      }}
     >
-      <Table>
+      <Table sx={{ 
+        '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+        '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+      }}>
         <TableHead>
           <TableRow>
             <TableCell sx={{ fontWeight: 'bold' }}>עמדה</TableCell>
@@ -194,12 +201,19 @@ export default function ManagerDashboard() {
       <TableContainer
         component={Paper}
         className="table-scroll-container"
-        sx={{ width: '100%', overflowX: 'auto' }}
+        sx={{ 
+          width: '100%', 
+          overflowX: 'auto',
+          '& th:first-of-type, & td:first-of-type': { pr: 0 }
+        }}
       >
-        <Table>
+        <Table sx={{ 
+          '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+          '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+        }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>עמדה</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', pr: 0, pl: 0 }}>עמדה</TableCell>
               {nextWeekDates.map((date, index) => (
                 <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
                   {hebrewDays[index]}
@@ -213,7 +227,7 @@ export default function ManagerDashboard() {
           <TableBody>
             {demoPositions.slice(0, 10).map((position) => (
               <TableRow key={position}>
-                <TableCell sx={{ fontWeight: 'bold' }}>{position}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', pr: 0, pl: 0 }}>{position}</TableCell>
                 {nextWeekDates.map((date) => {
                   const dateStr = format(date, 'yyyy-MM-dd')
                   const shift = shifts.find(s => s.date === dateStr && s.station === position)
@@ -258,12 +272,19 @@ export default function ManagerDashboard() {
       <TableContainer
         component={Paper}
         className="table-scroll-container"
-        sx={{ width: '100%', overflowX: 'auto' }}
+        sx={{ 
+          width: '100%', 
+          overflowX: 'auto',
+          '& th:first-of-type, & td:first-of-type': { pr: 0 }
+        }}
       >
-        <Table>
+        <Table sx={{ 
+          '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+          '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+        }}>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>עובד</TableCell>
+                             <TableCell sx={{ fontWeight: 'bold', pr: 0, pl: 0 }}>עובד</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>תאריך</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>משמרת</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>הסבר</TableCell>
@@ -281,7 +302,7 @@ export default function ManagerDashboard() {
               ) : (
                 constraints.map((constraint) => (
                   <TableRow key={constraint.id}>
-                    <TableCell>{worker.name}</TableCell>
+                    <TableCell sx={{ pr: 0, pl: 0 }}>{worker.name}</TableCell>
                     <TableCell>{format(new Date(constraint.date), 'dd/MM/yyyy')}</TableCell>
                     <TableCell>
                       {constraint.timeSlot === 'morning' ? '08:00-12:00' : '20:00-00:00'}
@@ -318,7 +339,7 @@ export default function ManagerDashboard() {
         </Typography>
       </Box>
 
-      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3 }}>
+      <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 3, px: 0 }}>
         <Tab 
           icon={<Visibility />} 
           label="שבוע נוכחי" 
@@ -341,7 +362,7 @@ export default function ManagerDashboard() {
         />
       </Tabs>
 
-      <Box sx={{ mt: 2 }}>
+      <Box sx={{ mt: 2, px: 0 }}>
         {tabValue === 0 && renderCurrentWeekTable()}
         {tabValue === 1 && renderNextWeekTable()}
         {tabValue === 2 && renderConstraintsTable()}

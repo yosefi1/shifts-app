@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Typography, 
@@ -19,33 +19,52 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Chip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Divider
 } from '@mui/material'
-import { ArrowBack, Info, Edit } from '@mui/icons-material'
+import { ArrowBack, Info, Edit, Block, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
-interface ConstraintNote {
-  date: string
-  timeSlot: string
-  note: string
-}
-
 export default function Availability() {
   const { user } = useAuthStore()
-  const { availability, addAvailability, updateAvailability } = useShiftsStore()
-  const [selectedDates, setSelectedDates] = useState<string[]>([])
-  const [constraintNotes, setConstraintNotes] = useState<ConstraintNote[]>([])
+  const { constraints, addConstraint, removeConstraint, getWorkerConstraints, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [noteDialog, setNoteDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
+  const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,
     date: '',
     timeSlot: ''
   })
-  const [currentNote, setCurrentNote] = useState('')
+  const [constraintReason, setConstraintReason] = useState('')
+  const [preferences, setPreferences] = useState({
+    notes: '',
+    preferPosition1: '',
+    preferPosition2: '',
+    preferPosition3: ''
+  })
+
+  // Load existing preferences on component mount
+  useEffect(() => {
+    if (user) {
+      const existingPreferences = getWorkerPreferences(user.id)
+      if (existingPreferences) {
+        setPreferences({
+          notes: existingPreferences.notes,
+          preferPosition1: existingPreferences.preferPosition1,
+          preferPosition2: existingPreferences.preferPosition2,
+          preferPosition3: existingPreferences.preferPosition3
+        })
+      }
+    }
+  }, [user, getWorkerPreferences])
   const navigate = useNavigate()
 
   const nextWeekStart = startOfWeek(addDays(new Date(), 7))
@@ -56,88 +75,70 @@ export default function Availability() {
 
   const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
   const timeSlots = [
-    { id: 'morning', label: '08:00-12:00', description: 'משמרת בוקר' },
-    { id: 'evening', label: '20:00-00:00', description: 'משמרת ערב' }
+    { id: 'first', label: '20:00-00:00', description: 'משמרת ראשונה' },
+    { id: 'second', label: '08:00-12:00', description: 'משמרת שנייה' }
+  ]
+  
+  const availablePositions = [
+    'א\'', 'ב\'', 'ג\'', 'ד\'', 'ו\'', 'ז\'', 'ח\'', '20', 
+    'גישרון 11', 'גישרון 17', '5/6', '39א', '39ב', 
+    'סיור 10', 'סיור 10א', 'עתודות', 'אפטרים'
   ]
 
-  const handleToggle = (date: string, timeSlot: string) => {
-    const key = `${date}-${timeSlot}`
-    const isCurrentlySelected = selectedDates.includes(key)
-    
-    if (isCurrentlySelected) {
-      // Unchecking - remove from selected and remove note
-      setSelectedDates((prev) => prev.filter((d) => d !== key))
-      setConstraintNotes((prev) => prev.filter((note) => !(note.date === date && note.timeSlot === timeSlot)))
-    } else {
-      // Checking - add to selected and open note dialog
-      setSelectedDates((prev) => [...prev, key])
-      const existingNote = constraintNotes.find((note) => note.date === date && note.timeSlot === timeSlot)
-      setCurrentNote(existingNote?.note || '')
-      setNoteDialog({ open: true, date, timeSlot })
-    }
+  const handleAddConstraint = (date: string, timeSlot: string) => {
+    setConstraintDialog({ open: true, date, timeSlot })
+    setConstraintReason('')
   }
 
-  const handleNoteSave = () => {
-    const { date, timeSlot } = noteDialog
-    setConstraintNotes((prev) => {
-      const filtered = prev.filter((note) => !(note.date === date && note.timeSlot === timeSlot))
-      return [...filtered, { date, timeSlot, note: currentNote }]
+  const handleConstraintSave = () => {
+    const { date, timeSlot } = constraintDialog
+    if (!user) return
+
+    addConstraint({
+      workerId: user.id,
+      date,
+      timeSlot: timeSlot as 'first' | 'second',
+      reason: constraintReason,
+      isBlocked: true
     })
-    setNoteDialog({ open: false, date: '', timeSlot: '' })
-    setCurrentNote('')
+
+    setConstraintDialog({ open: false, date: '', timeSlot: '' })
+    setConstraintReason('')
+    toast.success('אילוץ נוסף בהצלחה')
   }
 
-  const handleNoteCancel = () => {
-    // If canceling, also uncheck the constraint
-    const { date, timeSlot } = noteDialog
-    const key = `${date}-${timeSlot}`
-    setSelectedDates((prev) => prev.filter((d) => d !== key))
-    setNoteDialog({ open: false, date: '', timeSlot: '' })
-    setCurrentNote('')
+  const handleConstraintCancel = () => {
+    setConstraintDialog({ open: false, date: '', timeSlot: '' })
+    setConstraintReason('')
   }
 
-  const getNoteForShift = (date: string, timeSlot: string) => {
-    return constraintNotes.find((note) => note.date === date && note.timeSlot === timeSlot)?.note || ''
+  const handleRemoveConstraint = (constraintId: string) => {
+    removeConstraint(constraintId)
+    toast.success('אילוץ הוסר בהצלחה')
   }
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true)
-    try {
-      nextWeekDates.forEach((date, index) => {
-        const dateStr = format(date, 'yyyy-MM-dd')
-        const isFirstSunday = index === 0 // First Sunday
-        const isLastSunday = index === 7 // Last Sunday
-        
-        timeSlots.forEach((slot) => {
-          // Skip morning shift for first Sunday (only evening available)
-          if (isFirstSunday && slot.id === 'morning') return
-          // Skip evening shift for last Sunday (only morning available)
-          if (isLastSunday && slot.id === 'evening') return
-          
-          const key = `${dateStr}-${slot.id}`
-          const isAvailable = !selectedDates.includes(key) // Inverted logic - checked means NOT available
-          const note = getNoteForShift(dateStr, slot.id)
-          const avail = {
-            id: `${user?.id}-${dateStr}-${slot.id}`,
-            workerId: user?.id || '',
-            date: dateStr,
-            timeSlot: slot.id,
-            isAvailable,
-            note: note || undefined,
-          }
-          const existing = availability.find((a) => a.id === avail.id)
-          if (existing) {
-            updateAvailability(avail.id, avail)
-          } else {
-            addAvailability(avail)
-          }
-        })
-      })
-      toast.success('הזמינות נשמרה בהצלחה!')
-    } catch {
-      toast.error('שגיאה בשמירת הזמינות')
-    } finally {
-      setIsSubmitting(false)
+  const getConstraintForShift = (date: string, timeSlot: string) => {
+    if (!user) return null
+    return constraints.find(c => 
+      c.workerId === user.id && 
+      c.date === date && 
+      c.timeSlot === timeSlot
+    )
+  }
+
+  const hasConstraint = (date: string, timeSlot: string) => {
+    return getConstraintForShift(date, timeSlot) !== null
+  }
+
+  const handleToggleConstraint = (date: string, timeSlot: string) => {
+    const constraint = getConstraintForShift(date, timeSlot)
+    if (constraint) {
+      // Remove constraint if it exists
+      removeConstraint(constraint.id)
+      toast.success('אילוץ הוסר')
+    } else {
+      // Add constraint if it doesn't exist
+      handleAddConstraint(date, timeSlot)
     }
   }
 
@@ -168,21 +169,22 @@ export default function Availability() {
         </Typography>
       </Alert>
 
-      <TableContainer component={Paper} sx={{ mb: 3 }}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', textAlign: 'center' }}>יום</TableCell>
-              {timeSlots.map((slot) => (
-                <TableCell key={slot.id} sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                  {slot.label}
-                  <Typography variant="caption" display="block" color="textSecondary">
-                    {slot.description}
-                  </Typography>
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+        <TableContainer component={Paper} sx={{ maxWidth: '600px' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '25%', py: 1 }}>יום</TableCell>
+                {timeSlots.map((slot) => (
+                  <TableCell key={slot.id} sx={{ fontWeight: 'bold', textAlign: 'center', width: '37.5%', py: 1 }}>
+                    {slot.label}
+                    <Typography variant="caption" display="block" color="textSecondary">
+                      {slot.description}
+                    </Typography>
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
           <TableBody>
             {nextWeekDates.map((date, index) => {
               const dateStr = format(date, 'yyyy-MM-dd')
@@ -201,18 +203,18 @@ export default function Availability() {
                   </TableCell>
                   {timeSlots.map((slot) => {
                     const key = `${dateStr}-${slot.id}`
-                    const isChecked = selectedDates.includes(key)
-                    const note = getNoteForShift(dateStr, slot.id)
+                    const isChecked = hasConstraint(dateStr, slot.id)
+                    const constraint = getConstraintForShift(dateStr, slot.id)
                     
                     // Hide morning shift for first Sunday
-                    if (isFirstSunday && slot.id === 'morning') {
+                    if (isFirstSunday && slot.id === 'first') {
                       return <TableCell key={slot.id} align="center" sx={{ backgroundColor: '#f5f5f5' }}>
                         <Typography variant="caption" color="textSecondary">לא זמין</Typography>
                       </TableCell>
                     }
                     
                     // Hide evening shift for last Sunday
-                    if (isLastSunday && slot.id === 'evening') {
+                    if (isLastSunday && slot.id === 'second') {
                       return <TableCell key={slot.id} align="center" sx={{ backgroundColor: '#f5f5f5' }}>
                         <Typography variant="caption" color="textSecondary">לא זמין</Typography>
                       </TableCell>
@@ -220,17 +222,18 @@ export default function Availability() {
                     
                     return (
                       <TableCell key={slot.id} align="center">
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
                           <FormControlLabel
                             control={
                               <Checkbox
                                 checked={isChecked}
-                                onChange={() => handleToggle(dateStr, slot.id)}
+                                onChange={() => handleToggleConstraint(dateStr, slot.id)}
                                 sx={{
                                   '&.Mui-checked': {
                                     color: 'error.main',
                                   },
                                 }}
+                                size="small"
                               />
                             }
                             label=""
@@ -240,17 +243,23 @@ export default function Availability() {
                               <IconButton
                                 size="small"
                                 onClick={() => {
-                                  setCurrentNote(note)
-                                  setNoteDialog({ open: true, date: dateStr, timeSlot: slot.id })
+                                  setConstraintReason(constraint?.reason || '')
+                                  setConstraintDialog({ open: true, date: dateStr, timeSlot: slot.id })
                                 }}
                                 sx={{ p: 0.5 }}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
-                              {note && (
-                                <Typography variant="caption" color="textSecondary" sx={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {note}
-                                </Typography>
+                              {constraint?.reason && (
+                                <Chip
+                                  label={constraint.reason}
+                                  onDelete={() => handleRemoveConstraint(constraint.id)}
+                                  size="small"
+                                  color="error"
+                                  variant="outlined"
+                                  icon={<Delete fontSize="small" />}
+                                  sx={{ fontSize: '0.7rem' }}
+                                />
                               )}
                             </Box>
                           )}
@@ -261,18 +270,130 @@ export default function Availability() {
                 </TableRow>
               )
             })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                     </TableBody>
+         </Table>
+       </TableContainer>
+       </Box>
 
-      <Box sx={{ display: 'flex', gap: 2 }}>
+      {/* Preferences Section */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+        <Paper sx={{ p: 2, maxWidth: '500px', width: '100%' }}>
+          <Typography variant="h6" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', fontSize: '1.1rem' }}>
+            העדפות עבודה
+            <Tooltip title="ציין העדפות עבודה כלליות ומיקומים מועדפים">
+              <IconButton size="small" sx={{ ml: 1 }}>
+                <Info />
+              </IconButton>
+            </Tooltip>
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {/* General Notes */}
+            <TextField
+              label="הערות כלליות"
+              multiline
+              rows={2}
+              value={preferences.notes}
+              onChange={(e) => setPreferences({ ...preferences, notes: e.target.value })}
+              placeholder="לדוגמה: אני מעדיף משמרות בוקר, יש לי העדפה לעבוד בסופי שבוע..."
+              fullWidth
+              dir="rtl"
+              size="small"
+            />
+            
+            <Divider />
+            
+                         {/* Position Preferences */}
+             <Box>
+               <Typography variant="subtitle2" sx={{ mb: 1 }}>מיקומים מועדפים (לפי סדר עדיפות)</Typography>
+               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                 <FormControl sx={{ minWidth: 100 }}>
+                   <InputLabel>עדיפות ראשונה</InputLabel>
+                   <Select
+                     value={preferences.preferPosition1}
+                     onChange={(e) => setPreferences({ ...preferences, preferPosition1: e.target.value })}
+                     label="עדיפות ראשונה"
+                     size="small"
+                   >
+                     <MenuItem value="">
+                       <em>בחר מיקום</em>
+                     </MenuItem>
+                     {availablePositions.map((position) => (
+                       <MenuItem key={position} value={position}>{position}</MenuItem>
+                     ))}
+                   </Select>
+                 </FormControl>
+                 
+                 <FormControl sx={{ minWidth: 100 }}>
+                   <InputLabel>עדיפות שנייה</InputLabel>
+                   <Select
+                     value={preferences.preferPosition2}
+                     onChange={(e) => setPreferences({ ...preferences, preferPosition2: e.target.value })}
+                     label="עדיפות שנייה"
+                     size="small"
+                   >
+                     <MenuItem value="">
+                       <em>בחר מיקום</em>
+                     </MenuItem>
+                     {availablePositions.map((position) => (
+                       <MenuItem key={position} value={position}>{position}</MenuItem>
+                     ))}
+                   </Select>
+                 </FormControl>
+                 
+                 <FormControl sx={{ minWidth: 100 }}>
+                   <InputLabel>עדיפות שלישית</InputLabel>
+                   <Select
+                     value={preferences.preferPosition3}
+                     onChange={(e) => setPreferences({ ...preferences, preferPosition3: e.target.value })}
+                     label="עדיפות שלישית"
+                     size="small"
+                   >
+                     <MenuItem value="">
+                       <em>בחר מיקום</em>
+                     </MenuItem>
+                     {availablePositions.map((position) => (
+                       <MenuItem key={position} value={position}>{position}</MenuItem>
+                     ))}
+                   </Select>
+                 </FormControl>
+               </Box>
+             </Box>
+          </Box>
+        </Paper>
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 4 }}>
         <Button
           variant="contained"
           color="primary"
-          onClick={handleSubmit}
+          onClick={() => {
+            if (!user) return
+            
+            // Save preferences
+            const existingPreferences = getWorkerPreferences(user.id)
+            if (existingPreferences) {
+              updatePreference(user.id, {
+                notes: preferences.notes,
+                preferPosition1: preferences.preferPosition1,
+                preferPosition2: preferences.preferPosition2,
+                preferPosition3: preferences.preferPosition3
+              })
+            } else {
+              addPreference({
+                workerId: user.id,
+                notes: preferences.notes,
+                preferPosition1: preferences.preferPosition1,
+                preferPosition2: preferences.preferPosition2,
+                preferPosition3: preferences.preferPosition3
+              })
+            }
+            
+            toast.success('הזמינות והעדפות נשמרו בהצלחה!')
+          }}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'שומר...' : 'שמור אילוצים'}
+          {isSubmitting ? 'שומר...' : 'שמור זמינות והעדפות'}
         </Button>
         <Button
           variant="outlined"
@@ -283,7 +404,7 @@ export default function Availability() {
       </Box>
 
       {/* Note Dialog */}
-      <Dialog open={noteDialog.open} onClose={handleNoteCancel} maxWidth="sm" fullWidth>
+      <Dialog open={constraintDialog.open} onClose={handleConstraintCancel} maxWidth="sm" fullWidth>
         <DialogTitle>הוסף הסבר לאילוץ</DialogTitle>
         <DialogContent>
           <TextField
@@ -293,14 +414,14 @@ export default function Availability() {
             fullWidth
             multiline
             rows={3}
-            value={currentNote}
-            onChange={(e) => setCurrentNote(e.target.value)}
+            value={constraintReason}
+            onChange={(e) => setConstraintReason(e.target.value)}
             placeholder="לדוגמה: יש לי פגישה רפואית, אני בחופשה, יש לי אירוע משפחתי..."
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleNoteCancel}>ביטול</Button>
-          <Button onClick={handleNoteSave} variant="contained">שמור</Button>
+          <Button onClick={handleConstraintCancel}>ביטול</Button>
+          <Button onClick={handleConstraintSave} variant="contained">שמור</Button>
         </DialogActions>
       </Dialog>
     </Box>
