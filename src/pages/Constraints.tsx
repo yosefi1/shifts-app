@@ -23,13 +23,12 @@ import { he } from 'date-fns/locale'
 export default function Constraints() {
   console.log('=== CONSTRAINTS COMPONENT STARTING ===')
   
-  try {
-    const navigate = useNavigate()
-    const { user, getConstraints, addConstraint, removeConstraint } = useSupabaseAuthStore()
-    
-    console.log('Constraints component rendered - user:', user)
-    console.log('=== CONSTRAINTS COMPONENT LOADED SUCCESSFULLY ===')
+  const navigate = useNavigate()
+  const { user, getConstraints, addConstraint, removeConstraint } = useSupabaseAuthStore()
   
+  console.log('Constraints component rendered - user:', user)
+  console.log('=== CONSTRAINTS COMPONENT LOADED SUCCESSFULLY ===')
+
   const [constraints, setConstraints] = useState<any[]>([])
   const [newConstraint, setNewConstraint] = useState({
     date: '',
