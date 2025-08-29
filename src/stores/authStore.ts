@@ -11,23 +11,24 @@ export interface User {
 // Predefined users
 const USERS: User[] = [
   { id: '0', name: 'מנהל', role: 'manager' },
-  { id: '1', name: 'עובד 1', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '2', name: 'עובד 2', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '3', name: 'עובד 3', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '4', name: 'עובד 4', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '5', name: 'עובד 5', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '6', name: 'עובד 6', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '7', name: 'עובד 7', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '8', name: 'עובד 8', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '9', name: 'עובד 9', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '10', name: 'עובד 10', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '11', name: 'עובד 11', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '12', name: 'עובד 12', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '13', name: 'עובד 13', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '14', name: 'עובד 14', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '15', name: 'עובד 15', role: 'worker', gender: 'male', keepShabbat: true },
-  { id: '16', name: 'עובד 16', role: 'worker', gender: 'female', keepShabbat: false },
-  { id: '17', name: 'עובד 17', role: 'worker', gender: 'male', keepShabbat: true }
+  { id: '8863762', name: 'בן קורל', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '8279948', name: 'טל אדרי', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9033163', name: 'ליאב אביסידריס', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '8880935', name: 'ליאל שקד', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '8679277', name: 'מאור יצחק קפון', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9192400', name: 'מור לחמני', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9181564', name: 'נויה חזן', role: 'worker', gender: 'female', keepShabbat: false },
+  { id: '8379870', name: 'סילנאט טזרה', role: 'worker', gender: 'female', keepShabbat: false },
+  { id: '8783268', name: 'סתיו גינה', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9113482', name: 'עהד הזימה', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9113593', name: 'עומרי סעד', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '8801813', name: 'קטרין בטקיס', role: 'worker', gender: 'female', keepShabbat: false },
+  { id: '8573304', name: 'רונן רזיאב', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '5827572', name: 'רפאל ניסן', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9147342', name: 'רפאלה רזניקוב', role: 'worker', gender: 'female', keepShabbat: false },
+  { id: '8798653', name: 'שירן מוסרי', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '9067567', name: 'שרון סולימני', role: 'worker', gender: 'male', keepShabbat: true },
+  { id: '8083576', name: 'יקיר אלדד', role: 'worker', gender: 'male', keepShabbat: true }
 ]
 
 interface AuthState {
