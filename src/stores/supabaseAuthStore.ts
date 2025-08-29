@@ -28,9 +28,9 @@ interface SupabaseAuthState {
   removeConstraint: (constraintId: string) => Promise<void>
   
   // Preferences management
-  getPreferences: () => Promise<any[]>
-  addPreference: (preference: any) => Promise<void>
-  updatePreference: (workerId: string, updates: any) => Promise<void>
+  getPreferences: (workerId: string) => Promise<any | null>
+  addPreference: (preference: any) => Promise<boolean>
+  updatePreference: (workerId: string, updates: any) => Promise<boolean>
 }
 
 export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
@@ -322,44 +322,48 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
   },
   
   // Preferences management
-  getPreferences: async () => {
+  getPreferences: async (workerId: string) => {
     try {
       const { data, error } = await supabase
-        .from('preferences')
+        .from('worker_preferences')
         .select('*')
+        .eq('workerId', workerId)
+        .single()
       
       if (error) throw error
-      return data || []
+      return data
     } catch (error) {
-      console.error('Get preferences error:', error)
-      return []
+      console.error('Error getting preferences:', error)
+      return null
     }
   },
   
   addPreference: async (preference: any) => {
     try {
       const { error } = await supabase
-        .from('preferences')
+        .from('worker_preferences')
         .insert([preference])
       
       if (error) throw error
+      return true
     } catch (error) {
-      console.error('Add preference error:', error)
-      throw error
+      console.error('Error adding preference:', error)
+      return false
     }
   },
   
   updatePreference: async (workerId: string, updates: any) => {
     try {
       const { error } = await supabase
-        .from('preferences')
+        .from('worker_preferences')
         .update(updates)
         .eq('workerId', workerId)
       
       if (error) throw error
+      return true
     } catch (error) {
-      console.error('Update preference error:', error)
-      throw error
+      console.error('Error updating preference:', error)
+      return false
     }
   }
 }))
