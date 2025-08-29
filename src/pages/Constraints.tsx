@@ -24,6 +24,8 @@ export default function Constraints() {
   const navigate = useNavigate()
   const { user, getConstraints, addConstraint, removeConstraint } = useSupabaseAuthStore()
   
+  console.log('Constraints component rendered - user:', user)
+  
   const [constraints, setConstraints] = useState<any[]>([])
   const [newConstraint, setNewConstraint] = useState({
     date: '',
@@ -58,7 +60,9 @@ export default function Constraints() {
   }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('handleSubmit called!')
     e.preventDefault()
+    console.log('User check:', user)
     if (!user) return
 
     setIsSubmitting(true)
