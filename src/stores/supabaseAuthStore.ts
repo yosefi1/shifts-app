@@ -235,7 +235,7 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
       console.log('Testing database connection...')
       
       // Test basic connection
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .select('count')
         .limit(1)
