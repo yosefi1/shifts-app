@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { 
   Box, 
   Typography, 
@@ -120,7 +120,7 @@ export default function ManagerDashboardNew() {
     setTabValue(newValue)
   }
 
-  // Smart auto-assignment algorithm
+  // Smart auto-assignment algorithm - prevents double-booking and considers preferences
   const generateNextWeekAssignments = () => {
     setIsGenerating(true)
     const newShifts: any[] = []
@@ -175,6 +175,14 @@ export default function ManagerDashboardNew() {
             )
             
             if (hasConstraint) return false
+            
+            // Check if worker is already assigned to another shift on this date
+            const isAlreadyAssigned = newShifts.some(s => 
+              s.workerId === worker.id && 
+              s.date === dateStr
+            )
+            
+            if (isAlreadyAssigned) return false
             
             // For male-only positions, filter by gender
             if (maleOnlyPositions.includes(position) && worker.gender !== 'male') {
@@ -294,11 +302,29 @@ export default function ManagerDashboardNew() {
                               size="small"
                               fullWidth
                             >
-                              {workers.map((w) => (
-                                <MenuItem key={w.id} value={w.id}>
-                                  {w.name}
-                                </MenuItem>
-                              ))}
+                              {workers.map((w) => {
+                                // Check if worker is already assigned to another shift at the same time
+                                const isAlreadyAssigned = shifts.some(s => 
+                                  s.workerId === w.id && 
+                                  s.date === dateStr && 
+                                  s.id !== shift.id // Don't count the current shift
+                                )
+                                
+                                return (
+                                  <MenuItem 
+                                    key={w.id} 
+                                    value={w.id} 
+                                    disabled={isAlreadyAssigned}
+                                    sx={{ 
+                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                      opacity: isAlreadyAssigned ? 0.5 : 1,
+                                      color: isAlreadyAssigned ? 'text.disabled' : 'inherit'
+                                    }}
+                                  >
+                                    {w.name}
+                                  </MenuItem>
+                                )
+                              })}
                             </Select>
                           ) : (
                             <Typography variant="body2" color="textSecondary">
@@ -325,6 +351,8 @@ export default function ManagerDashboardNew() {
           sx={{ 
             width: '100%', 
             overflowX: 'auto',
+            overflowY: 'auto',
+            maxHeight: '70vh',
             '& th:first-of-type, & td:first-of-type': { pr: 0 }
           }}
         >
@@ -371,11 +399,29 @@ export default function ManagerDashboardNew() {
                               }
                             }}
                           >
-                            {workers.map((w) => (
-                              <MenuItem key={w.id} value={w.id} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
-                                {w.name}
-                              </MenuItem>
-                            ))}
+                            {workers.map((w) => {
+                              // Check if worker is already assigned to another shift at the same time
+                              const isAlreadyAssigned = shifts.some(s => 
+                                s.workerId === w.id && 
+                                s.date === dateStr && 
+                                s.id !== shift.id // Don't count the current shift
+                              )
+                              
+                              return (
+                                <MenuItem 
+                                  key={w.id} 
+                                  value={w.id} 
+                                  disabled={isAlreadyAssigned}
+                                  sx={{ 
+                                    fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                    opacity: isAlreadyAssigned ? 0.5 : 1,
+                                    color: isAlreadyAssigned ? 'text.disabled' : 'inherit'
+                                  }}
+                                >
+                                  {w.name}
+                                </MenuItem>
+                              )
+                            })}
                           </Select>
                         ) : (
                           <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem' }}>
@@ -605,18 +651,20 @@ export default function ManagerDashboardNew() {
             sx={{ 
               width: '100%', 
               overflowX: 'auto',
+              overflowY: 'auto',
+              maxHeight: '70vh',
               '& th:first-of-type, & td:first-of-type': { pr: 0 }
             }}
           >
-                      <Table size="small" sx={{ 
-            '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
-            '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
-          }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
-                                                                           {selectedWeekDates.map((date, index) => (
-                     <TableCell key={format(date, 'yyyy-MM-dd')} sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%', pl: index === 0 ? 0 : undefined }}>
+            <Table size="small" sx={{ 
+              '& .MuiTableRow-root > *:first-of-type': { pr: 0, pl: 0, textAlign: 'right' },
+              '& .MuiTableRow-root > *:nth-of-type(2)': { pl: 0 }
+            }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '20%' }}>עמדה</TableCell>
+                  {selectedWeekDates.map((date, index) => (
+                    <TableCell key={format(date, 'yyyy-MM-dd')} colSpan={2} sx={{ fontWeight: 'bold', textAlign: 'center', width: '22.8%', pl: index === 0 ? 0 : undefined }}>
                       <Typography variant="caption" sx={{ fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
                         {hebrewDays[index]}
                       </Typography>
@@ -626,6 +674,32 @@ export default function ManagerDashboardNew() {
                     </TableCell>
                   ))}
                 </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
+                  {selectedWeekDates.map((date, dayIndex) => {
+                    const isFirstSunday = dayIndex === 0
+                    const isLastSunday = dayIndex === 6
+                    
+                    return (
+                      <Fragment key={format(date, 'yyyy-MM-dd')}>
+                        {!isLastSunday && (
+                          <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%', borderRight: '1px solid #e0e0e0' }}>
+                            <Typography variant="caption" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
+                              20:00-00:00
+                            </Typography>
+                          </TableCell>
+                        )}
+                        {!isFirstSunday && (
+                          <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '11.4%' }}>
+                            <Typography variant="caption" sx={{ fontSize: { xs: '0.5rem', sm: '0.6rem' } }}>
+                              08:00-12:00
+                            </Typography>
+                          </TableCell>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+                </TableRow>
               </TableHead>
               <TableBody>
                 {demoPositions.map((position) => (
@@ -634,77 +708,149 @@ export default function ManagerDashboardNew() {
                     {selectedWeekDates.map((date, dayIndex) => {
                       const dateStr = format(date, 'yyyy-MM-dd')
                       const isFirstSunday = dayIndex === 0
-                      const isLastSunday = dayIndex === 7
+                      const isLastSunday = dayIndex === 6
                       
-                      // For Sundays, only show one shift (evening for first Sunday, morning for last Sunday)
-                      const availableSlots = []
-                      if (isFirstSunday) {
-                        availableSlots.push('first')
-                      } else if (isLastSunday) {
-                        availableSlots.push('second')
-                      } else {
-                        availableSlots.push('first', 'second')
-                      }
-                    
+                      // First shift (20:00-00:00)
+                      const firstShiftId = `${dateStr}-${position}-first`
+                      const firstShift = shifts.find(s => s.id === firstShiftId)
+                      
+                      // Second shift (08:00-12:00)
+                      const secondShiftId = `${dateStr}-${position}-second`
+                      const secondShift = shifts.find(s => s.id === secondShiftId)
+                      
                       return (
-                        <TableCell key={dateStr} align="center" sx={{ width: '11.4%' }}>
-                          {availableSlots.map((slot, slotIndex) => {
-                            const shiftId = `${dateStr}-${position}-${slot}`
-                            const existingShift = shifts.find(s => s.id === shiftId)
-                            const shiftTime = shiftTimes[slot as keyof typeof shiftTimes]
-                            
-                            return (
-                              <Box key={slot} sx={{ mb: slotIndex > 0 ? 0.5 : 0 }}>
-                                <Typography variant="caption" color="textSecondary" display="block" sx={{ fontSize: '0.6rem' }}>
-                                  {shiftTime?.start}-{shiftTime?.end}
-                                </Typography>
-                                <Select
-                                  value={existingShift?.workerId || ''}
-                                  onChange={(e) => {
-                                    if (e.target.value) {
-                                      const worker = workers.find(w => w.id === e.target.value)
-                                      if (existingShift) {
-                                        handleWorkerChange(existingShift.id, e.target.value)
-                                      } else {
-                                        // Create new shift
-                                        const newShift = {
-                                          id: shiftId,
-                                          date: dateStr,
-                                          startTime: shiftTime?.start || '08:00',
-                                          endTime: shiftTime?.end || '12:00',
-                                          station: position,
-                                          workerId: e.target.value,
-                                          workerName: worker?.name || '',
-                                          status: 'assigned' as const,
-                                        }
-                                        setShifts([...shifts, newShift])
+                        <Fragment key={dateStr}>
+                          {!isLastSunday && (
+                            <TableCell align="center" sx={{ width: '11.4%', borderRight: '1px solid #e0e0e0' }}>
+                              <Select
+                                value={firstShift?.workerId || ''}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    const worker = workers.find(w => w.id === e.target.value)
+                                    if (firstShift) {
+                                      handleWorkerChange(firstShift.id, e.target.value)
+                                    } else {
+                                      // Create new shift
+                                      const newShift = {
+                                        id: firstShiftId,
+                                        date: dateStr,
+                                        startTime: '20:00',
+                                        endTime: '00:00',
+                                        station: position,
+                                        workerId: e.target.value,
+                                        workerName: worker?.name || '',
+                                        status: 'assigned' as const,
                                       }
+                                      setShifts([...shifts, newShift])
                                     }
-                                  }}
-                                  size="small"
-                                  sx={{ 
-                                    minWidth: { xs: 60, sm: 80 },
+                                  }
+                                }}
+                                size="small"
+                                sx={{ 
+                                  minWidth: { xs: 60, sm: 80 },
+                                  fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                  '& .MuiSelect-select': {
                                     fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                                    '& .MuiSelect-select': {
-                                      fontSize: { xs: '0.7rem', sm: '0.8rem' },
-                                      padding: { xs: '4px 8px', sm: '8px 12px' }
-                                    }
-                                  }}
-                                  displayEmpty
-                                >
-                                  <MenuItem value="" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
-                                    <Typography variant="caption" color="textSecondary" sx={{ fontSize: 'inherit' }}>בחר</Typography>
-                                  </MenuItem>
-                                  {workers.map((w) => (
-                                    <MenuItem key={w.id} value={w.id} sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                                    padding: { xs: '4px 8px', sm: '8px 12px' }
+                                  }
+                                }}
+                                displayEmpty
+                              >
+                                <MenuItem value="" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                                  <Typography variant="caption" color="textSecondary" sx={{ fontSize: 'inherit' }}>בחר</Typography>
+                                </MenuItem>
+                                {workers.map((w) => {
+                                  // Check if worker is already assigned to another shift at the same time
+                                  const isAlreadyAssigned = shifts.some(s => 
+                                    s.workerId === w.id && 
+                                    s.date === dateStr && 
+                                    s.id !== firstShift?.id // Don't count the current shift
+                                  )
+                                  
+                                  return (
+                                    <MenuItem 
+                                      key={w.id} 
+                                      value={w.id} 
+                                      disabled={isAlreadyAssigned}
+                                      sx={{ 
+                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                        opacity: isAlreadyAssigned ? 0.5 : 1,
+                                        color: isAlreadyAssigned ? 'text.disabled' : 'inherit'
+                                      }}
+                                    >
                                       {w.name}
                                     </MenuItem>
-                                  ))}
-                                </Select>
-                              </Box>
-                            )
-                          })}
-                        </TableCell>
+                                  )
+                                })}
+                              </Select>
+                            </TableCell>
+                          )}
+                          {!isFirstSunday && (
+                            <TableCell align="center" sx={{ width: '11.4%' }}>
+                              <Select
+                                value={secondShift?.workerId || ''}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    const worker = workers.find(w => w.id === e.target.value)
+                                    if (secondShift) {
+                                      handleWorkerChange(secondShift.id, e.target.value)
+                                    } else {
+                                      // Create new shift
+                                      const newShift = {
+                                        id: secondShiftId,
+                                        date: dateStr,
+                                        startTime: '08:00',
+                                        endTime: '12:00',
+                                        station: position,
+                                        workerId: e.target.value,
+                                        workerName: worker?.name || '',
+                                        status: 'assigned' as const,
+                                      }
+                                      setShifts([...shifts, newShift])
+                                    }
+                                  }
+                                }}
+                                size="small"
+                                sx={{ 
+                                  minWidth: { xs: 60, sm: 80 },
+                                  fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                  '& .MuiSelect-select': {
+                                    fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                    padding: { xs: '4px 8px', sm: '8px 12px' }
+                                  }
+                                }}
+                                displayEmpty
+                              >
+                                <MenuItem value="" sx={{ fontSize: { xs: '0.7rem', sm: '0.8rem' } }}>
+                                  <Typography variant="caption" color="textSecondary" sx={{ fontSize: 'inherit' }}>בחר</Typography>
+                                </MenuItem>
+                                {workers.map((w) => {
+                                  // Check if worker is already assigned to another shift at the same time
+                                  const isAlreadyAssigned = shifts.some(s => 
+                                    s.workerId === w.id && 
+                                    s.date === dateStr && 
+                                    s.id !== secondShift?.id // Don't count the current shift
+                                  )
+                                  
+                                  return (
+                                    <MenuItem 
+                                      key={w.id} 
+                                      value={w.id} 
+                                      disabled={isAlreadyAssigned}
+                                      sx={{ 
+                                        fontSize: { xs: '0.7rem', sm: '0.8rem' },
+                                        opacity: isAlreadyAssigned ? 0.5 : 1,
+                                        color: isAlreadyAssigned ? 'text.disabled' : 'inherit'
+                                      }}
+                                    >
+                                      {w.name}
+                                    </MenuItem>
+                                  )
+                                })}
+                              </Select>
+                            </TableCell>
+                          )}
+                        </Fragment>
                       )
                     })}
                   </TableRow>
