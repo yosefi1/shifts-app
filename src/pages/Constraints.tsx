@@ -17,7 +17,7 @@ import {
 import { ArrowBack, Add, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
-import { format, addDays, startOfWeek } from 'date-fns'
+import { format, addDays } from 'date-fns'
 import { he } from 'date-fns/locale'
 
 export default function Constraints() {
