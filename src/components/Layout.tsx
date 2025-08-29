@@ -78,6 +78,7 @@ export default function Layout({ children }: LayoutProps) {
         { text: 'ראשי', icon: <Dashboard />, path: '/' },
         { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
         { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
+        { text: 'אילוצים', icon: <Schedule />, path: '/constraints' },
       ]
 
   const drawer = (

@@ -6,6 +6,7 @@ import Availability from './pages/Availability'
 import Shifts from './pages/Shifts'
 import ManagerDashboard from './pages/ManagerDashboardNew'
 import Workers from './pages/Workers'
+import Constraints from './pages/Constraints'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/availability" element={<Availability />} />
         <Route path="/shifts" element={<Shifts />} />
+        <Route path="/constraints" element={<Constraints />} />
         {user.role === 'manager' && <Route path="/manager" element={<ManagerDashboard />} />}
         {user.role === 'manager' && <Route path="/workers" element={<Workers />} />}
         <Route path="*" element={<Navigate to="/" />} />

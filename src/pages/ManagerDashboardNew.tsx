@@ -31,7 +31,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 export default function ManagerDashboardNew() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
-  const { shifts, setShifts, constraints, getWorkerPreferences } = useShiftsStore()
+  const { shifts, setShifts, getWorkerPreferences } = useShiftsStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [firstShiftTime, setFirstShiftTime] = useState({ start: '20:00', end: '00:00' })
   
@@ -99,8 +99,9 @@ export default function ManagerDashboardNew() {
   const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
 
   // Get real workers from auth store
-  const { getAllUsers } = useSupabaseAuthStore()
+  const { getAllUsers, getConstraints } = useSupabaseAuthStore()
   const [workers, setWorkers] = useState<User[]>([])
+  const [constraintsData, setConstraintsData] = useState<any[]>([])
   
   // Load users on component mount
   useEffect(() => {
@@ -110,6 +111,19 @@ export default function ManagerDashboardNew() {
     }
     loadUsers()
   }, [getAllUsers])
+
+  // Load constraints on component mount
+  useEffect(() => {
+    const loadConstraints = async () => {
+      try {
+        const constraints = await getConstraints()
+        setConstraintsData(constraints)
+      } catch (error) {
+        console.error('Failed to load constraints:', error)
+      }
+    }
+    loadConstraints()
+  }, [getConstraints])
 
   // Demo positions (based on the photo)
   const demoPositions = [
@@ -167,7 +181,7 @@ export default function ManagerDashboardNew() {
           // Find available workers for this slot
           let availableWorkers = workers.filter(worker => {
             // Check if worker has constraints for this date/slot
-            const hasConstraint = constraints.some(c => 
+            const hasConstraint = constraintsData.some(c => 
               c.workerId === worker.id && 
               c.date === dateStr && 
               c.timeSlot === slot &&
@@ -1077,8 +1091,23 @@ export default function ManagerDashboardNew() {
 
   const renderConstraintsTable = () => {
     // Use the already fetched workers data from state
+    const [constraintsData, setConstraintsData] = useState<any[]>([])
+    
+    // Load constraints from Supabase
+    useEffect(() => {
+      const loadConstraints = async () => {
+        try {
+          const constraints = await getConstraints()
+          setConstraintsData(constraints)
+        } catch (error) {
+          console.error('Failed to load constraints:', error)
+        }
+      }
+      loadConstraints()
+    }, [getConstraints])
+    
     const workerConstraints = workers.map((worker: User) => {
-      const workerConstraints = constraints.filter((c: any) => c.workerId === worker.id)
+      const workerConstraints = constraintsData.filter((c: any) => c.workerId === worker.id)
       return {
         worker,
         constraints: workerConstraints

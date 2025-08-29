@@ -20,6 +20,17 @@ interface SupabaseAuthState {
   initializeUsers: () => Promise<void>
   checkSession: () => Promise<User | null>
   testDatabaseConnection: () => Promise<{ success: boolean; error: string | null }>
+  
+  // Constraints management
+  getConstraints: () => Promise<any[]>
+  addConstraint: (constraint: any) => Promise<void>
+  updateConstraint: (constraintId: string, updates: any) => Promise<void>
+  removeConstraint: (constraintId: string) => Promise<void>
+  
+  // Preferences management
+  getPreferences: () => Promise<any[]>
+  addPreference: (preference: any) => Promise<void>
+  updatePreference: (workerId: string, updates: any) => Promise<void>
 }
 
 export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
@@ -250,6 +261,105 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
     } catch (error) {
       console.error('Database test error:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  },
+  
+  // Constraints management
+  getConstraints: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('constraints')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Get constraints error:', error)
+      return []
+    }
+  },
+  
+  addConstraint: async (constraint: any) => {
+    try {
+      const { error } = await supabase
+        .from('constraints')
+        .insert([constraint])
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Add constraint error:', error)
+      throw error
+    }
+  },
+  
+  updateConstraint: async (constraintId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('constraints')
+        .update(updates)
+        .eq('id', constraintId)
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Update constraint error:', error)
+      throw error
+    }
+  },
+  
+  removeConstraint: async (constraintId: string) => {
+    try {
+      const { error } = await supabase
+        .from('constraints')
+        .delete()
+        .eq('id', constraintId)
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Remove constraint error:', error)
+      throw error
+    }
+  },
+  
+  // Preferences management
+  getPreferences: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('preferences')
+        .select('*')
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Get preferences error:', error)
+      return []
+    }
+  },
+  
+  addPreference: async (preference: any) => {
+    try {
+      const { error } = await supabase
+        .from('preferences')
+        .insert([preference])
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Add preference error:', error)
+      throw error
+    }
+  },
+  
+  updatePreference: async (workerId: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('preferences')
+        .update(updates)
+        .eq('workerId', workerId)
+      
+      if (error) throw error
+    } catch (error) {
+      console.error('Update preference error:', error)
+      throw error
     }
   }
 }))
