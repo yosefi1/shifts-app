@@ -18,10 +18,11 @@ interface SupabaseAuthState {
   addWorker: (worker: Omit<User, 'id'> & { id?: string }) => Promise<void>
   removeWorker: (workerId: string) => Promise<void>
   initializeUsers: () => Promise<void>
+  checkSession: () => Promise<User | null>
 }
 
 export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  user: null, // Start with no user
   
   setUser: (user) => {
     set({ user })
@@ -191,6 +192,39 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
       }
     } catch (error) {
       console.error('Initialize users error:', error)
+    }
+  },
+
+  // Check for existing session on app start
+  checkSession: async () => {
+    try {
+      // Check if we have a stored user in localStorage
+      const storedUser = localStorage.getItem('user')
+      if (storedUser) {
+        const user = JSON.parse(storedUser)
+        // Verify the user still exists in database
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (!error && data) {
+          // User exists, restore session
+          set({ user })
+          return user
+        } else {
+          // User no longer exists, clear storage
+          localStorage.removeItem('user')
+          set({ user: null })
+        }
+      }
+      return null
+    } catch (error) {
+      console.error('Check session error:', error)
+      localStorage.removeItem('user')
+      set({ user: null })
+      return null
     }
   }
 }))

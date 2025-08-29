@@ -7,9 +7,40 @@ import Shifts from './pages/Shifts'
 import ManagerDashboard from './pages/ManagerDashboardNew'
 import Workers from './pages/Workers'
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 export default function App() {
-  const user = useSupabaseAuthStore((s) => s.user)
+  const { user, checkSession } = useSupabaseAuthStore()
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check for existing session on app start
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        await checkSession()
+      } catch (error) {
+        console.error('Failed to check session:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    initApp()
+  }, [checkSession])
+
+  // Show loading while checking session
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        טוען...
+      </div>
+    )
+  }
 
   if (!user) {
     return <Login />
