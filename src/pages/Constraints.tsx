@@ -55,7 +55,7 @@ export default function Constraints() {
     if (user) {
       loadConstraints()
     }
-  }, [user, getConstraints])
+  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,6 +66,8 @@ export default function Constraints() {
     setSuccess(null)
 
     try {
+      console.log('Submitting constraint for user:', user.id)
+      
       const constraint = {
         id: `${user.id}-${newConstraint.date}-${newConstraint.timeSlot}`,
         workerId: user.id,
@@ -76,7 +78,12 @@ export default function Constraints() {
         created_at: new Date().toISOString()
       }
 
+      console.log('Constraint object:', constraint)
+      console.log('Calling addConstraint...')
+      
       await addConstraint(constraint)
+      
+      console.log('Constraint added successfully!')
       
       // Add to local state
       setConstraints([...constraints, constraint])
@@ -85,8 +92,8 @@ export default function Constraints() {
       setNewConstraint({ date: '', timeSlot: 'first', reason: '' })
       setSuccess('האילוץ נוסף בהצלחה!')
     } catch (error) {
-      setError('שגיאה בהוספת האילוץ')
       console.error('Add constraint error:', error)
+      setError(`שגיאה בהוספת האילוץ: ${error}`)
     } finally {
       setIsSubmitting(false)
     }
