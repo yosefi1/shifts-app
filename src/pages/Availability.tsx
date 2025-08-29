@@ -35,7 +35,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export default function Availability() {
-  const { user } = useSupabaseAuthStore()
+  const { user, addConstraint: addSupabaseConstraint, addPreference: addSupabasePreference, updatePreference: updateSupabasePreference } = useSupabaseAuthStore()
   const { constraints, addConstraint, removeConstraint, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
   const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,
@@ -365,29 +365,52 @@ export default function Availability() {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => {
+          onClick={async () => {
             if (!user) return
             
-            // Save preferences
-            const existingPreferences = getWorkerPreferences(user.id)
-            if (existingPreferences) {
-              updatePreference(user.id, {
-                notes: preferences.notes,
-                preferPosition1: preferences.preferPosition1,
-                preferPosition2: preferences.preferPosition2,
-                preferPosition3: preferences.preferPosition3
-              })
-            } else {
-              addPreference({
-                workerId: user.id,
-                notes: preferences.notes,
-                preferPosition1: preferences.preferPosition1,
-                preferPosition2: preferences.preferPosition2,
-                preferPosition3: preferences.preferPosition3
-              })
+            try {
+              // Save preferences to Supabase
+              const existingPreferences = getWorkerPreferences(user.id)
+              if (existingPreferences) {
+                await updateSupabasePreference(user.id, {
+                  notes: preferences.notes,
+                  preferPosition1: preferences.preferPosition1,
+                  preferPosition2: preferences.preferPosition2,
+                  preferPosition3: preferences.preferPosition3
+                })
+              } else {
+                await addSupabasePreference({
+                  workerId: user.id,
+                  notes: preferences.notes,
+                  preferPosition1: preferences.preferPosition1,
+                  preferPosition2: preferences.preferPosition2,
+                  preferPosition3: preferences.preferPosition3
+                })
+              }
+              
+              // Also save to local storage for backward compatibility
+              if (existingPreferences) {
+                updatePreference(user.id, {
+                  notes: preferences.notes,
+                  preferPosition1: preferences.preferPosition1,
+                  preferPosition2: preferences.preferPosition2,
+                  preferPosition3: preferences.preferPosition3
+                })
+              } else {
+                addPreference({
+                  workerId: user.id,
+                  notes: preferences.notes,
+                  preferPosition1: preferences.preferPosition1,
+                  preferPosition2: preferences.preferPosition2,
+                  preferPosition3: preferences.preferPosition3
+                })
+              }
+              
+              toast.success('הזמינות והעדפות נשמרו בהצלחה!')
+            } catch (error) {
+              console.error('Failed to save preferences:', error)
+              toast.error('שגיאה בשמירת ההעדפות')
             }
-            
-            toast.success('הזמינות והעדפות נשמרו בהצלחה!')
           }}
         >
           שמור זמינות והעדפות
