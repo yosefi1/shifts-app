@@ -1097,6 +1097,7 @@ export default function ManagerDashboardNew() {
     
     const workerConstraints = workers.map((worker: User) => {
       const workerConstraints = constraintsData.filter((c: any) => c.workerId === worker.id)
+      console.log(`Worker ${worker.name} (ID: ${worker.id}) has ${workerConstraints.length} constraints:`, workerConstraints)
       return {
         worker,
         constraints: workerConstraints
