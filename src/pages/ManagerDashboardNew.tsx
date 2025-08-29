@@ -117,13 +117,14 @@ export default function ManagerDashboardNew() {
     const loadConstraints = async () => {
       try {
         const constraints = await getConstraints()
+        console.log('Loaded constraints:', constraints)
         setConstraintsData(constraints)
       } catch (error) {
         console.error('Failed to load constraints:', error)
       }
     }
     loadConstraints()
-  }, [getConstraints])
+  }, [])
 
   // Demo positions (based on the photo)
   const demoPositions = [
@@ -131,6 +132,7 @@ export default function ManagerDashboardNew() {
   ]
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    console.log('Tab changed to:', newValue, 'constraintsData length:', constraintsData.length)
     setTabValue(newValue)
   }
 
@@ -1090,6 +1092,9 @@ export default function ManagerDashboardNew() {
   }
 
   const renderConstraintsTable = () => {
+    console.log('renderConstraintsTable - constraintsData:', constraintsData)
+    console.log('renderConstraintsTable - workers:', workers)
+    
     const workerConstraints = workers.map((worker: User) => {
       const workerConstraints = constraintsData.filter((c: any) => c.workerId === worker.id)
       return {
