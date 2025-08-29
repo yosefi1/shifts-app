@@ -35,7 +35,7 @@ import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export default function Availability() {
-  const { user, addConstraint: addSupabaseConstraint, addPreference: addSupabasePreference, updatePreference: updateSupabasePreference } = useSupabaseAuthStore()
+  const { user, addPreference: addSupabasePreference, updatePreference: updateSupabasePreference } = useSupabaseAuthStore()
   const { constraints, addConstraint, removeConstraint, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
   const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,
