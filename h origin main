@@ -1,0 +1,5 @@
+[33mc3f43d5[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Switch app from localStorage to Supabase database - real-time sync between all devices
+[33m3c1619c[m Configure Supabase with real project credentials
+[33m16deb9f[m Add Supabase integration for real-time database sync - workers submit from phones, manager sees instantly on PC
+[33m74091a5[m Fix remaining TypeScript errors: remove isSubmitting references and unused variables
+[33ma65117d[m Fix TypeScript errors: remove unused imports and variables

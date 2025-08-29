@@ -151,7 +151,7 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
   initializeUsers: async () => {
     try {
       // Check if users table exists and has data
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .select('count')
         .limit(1)

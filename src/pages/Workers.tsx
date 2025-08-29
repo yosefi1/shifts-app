@@ -43,14 +43,12 @@ export default function Workers() {
 
   // Get real workers from auth store
   const { getAllUsers, updateWorker, addWorker, removeWorker } = useSupabaseAuthStore()
-  const [allUsers, setAllUsers] = useState<any[]>([])
   const [workers, setWorkers] = useState<any[]>([])
   
   // Load users on component mount
   useEffect(() => {
     const loadUsers = async () => {
       const users = await getAllUsers()
-      setAllUsers(users)
       setWorkers(users.filter(user => user.role === 'worker'))
     }
     loadUsers()
@@ -71,7 +69,6 @@ export default function Workers() {
       setWorkersDialogOpen(false)
       // Reload users
       const users = await getAllUsers()
-      setAllUsers(users)
       setWorkers(users.filter(user => user.role === 'worker'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בהוספת עובד')
@@ -92,7 +89,6 @@ export default function Workers() {
         setWorkersDialogOpen(false)
         // Reload users
         const users = await getAllUsers()
-        setAllUsers(users)
         setWorkers(users.filter(user => user.role === 'worker'))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'שגיאה בעריכת עובד')
@@ -106,7 +102,6 @@ export default function Workers() {
         await removeWorker(workerId)
         // Reload users
         const users = await getAllUsers()
-        setAllUsers(users)
         setWorkers(users.filter(user => user.role === 'worker'))
       } catch (err) {
         setError('שגיאה במחיקת עובד')
