@@ -1090,22 +1090,6 @@ export default function ManagerDashboardNew() {
   }
 
   const renderConstraintsTable = () => {
-    // Use the already fetched workers data from state
-    const [constraintsData, setConstraintsData] = useState<any[]>([])
-    
-    // Load constraints from Supabase
-    useEffect(() => {
-      const loadConstraints = async () => {
-        try {
-          const constraints = await getConstraints()
-          setConstraintsData(constraints)
-        } catch (error) {
-          console.error('Failed to load constraints:', error)
-        }
-      }
-      loadConstraints()
-    }, [getConstraints])
-    
     const workerConstraints = workers.map((worker: User) => {
       const workerConstraints = constraintsData.filter((c: any) => c.workerId === worker.id)
       return {
