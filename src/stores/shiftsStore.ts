@@ -55,6 +55,8 @@ interface ShiftsState {
   updatePreference: (workerId: string, updates: Partial<WorkerPreferences>) => void
   getWorkerConstraints: (workerId: string) => Constraint[]
   getWorkerPreferences: (workerId: string) => WorkerPreferences | null
+  hasConflict: (workerId: string, date: string, timeSlot: string) => boolean
+  canAssignWorker: (workerId: string, date: string, timeSlot: string) => boolean
 }
 
 export const useShiftsStore = create<ShiftsState>((set, get) => ({
@@ -171,5 +173,53 @@ export const useShiftsStore = create<ShiftsState>((set, get) => ({
   
   getWorkerPreferences: (workerId) => {
     return get().preferences.find(p => p.workerId === workerId) || null
+  },
+  
+  hasConflict: (workerId, date, timeSlot) => {
+    const existingShift = get().shifts.find(shift => 
+      shift.workerId === workerId && 
+      shift.date === date
+    )
+    
+    if (!existingShift) return false
+    
+    // Check if time slots overlap based on timeSlot parameter
+    // timeSlot can be 'first' or 'second' - we need to map this to actual times
+    const timeSlotMap = {
+      'first': { start: '20:00', end: '00:00' },
+      'second': { start: '08:00', end: '12:00' }
+    }
+    
+    const requestedSlot = timeSlotMap[timeSlot as keyof typeof timeSlotMap]
+    if (!requestedSlot) return false
+    
+    // Simple conflict check - if worker has any shift on this date, it's a conflict
+    // This prevents double-booking on the same date
+    return true
+  },
+  
+  canAssignWorker: (workerId, date, timeSlot) => {
+    // Check for conflicts first
+    if (get().hasConflict(workerId, date, timeSlot)) {
+      return false
+    }
+    
+    // Check availability
+    const isAvailable = get().availability.some(a => 
+      a.workerId === workerId && 
+      a.date === date && 
+      a.timeSlot === timeSlot && 
+      a.isAvailable
+    )
+    
+    // Check constraints
+    const isBlocked = get().constraints.some(c => 
+      c.workerId === workerId && 
+      c.date === date && 
+      c.timeSlot === timeSlot && 
+      c.isBlocked
+    )
+    
+    return isAvailable && !isBlocked
   }
 })) 
