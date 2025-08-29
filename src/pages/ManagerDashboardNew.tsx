@@ -25,7 +25,7 @@ import {
 import { ArrowBack, AutoFixHigh, Visibility, History, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
-import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
+import { useSupabaseAuthStore, User } from '../stores/supabaseAuthStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
 export default function ManagerDashboardNew() {
@@ -100,15 +100,13 @@ export default function ManagerDashboardNew() {
 
   // Get real workers from auth store
   const { getAllUsers } = useSupabaseAuthStore()
-  const [allUsers, setAllUsers] = useState<any[]>([])
-  const [workers, setWorkers] = useState<any[]>([])
+  const [workers, setWorkers] = useState<User[]>([])
   
   // Load users on component mount
   useEffect(() => {
     const loadUsers = async () => {
       const users = await getAllUsers()
-      setAllUsers(users)
-      setWorkers(users.filter(user => user.role === 'worker'))
+      setWorkers(users.filter((user: User) => user.role === 'worker'))
     }
     loadUsers()
   }, [getAllUsers])
@@ -722,11 +720,9 @@ export default function ManagerDashboardNew() {
   }
 
   const renderConstraintsTable = () => {
-    // Use the already fetched data from the top level
-    const allUsers = getAllUsers()
-    
-    const workerConstraints = allUsers.filter(user => user.role === 'worker').map(worker => {
-      const workerConstraints = constraints.filter(c => c.workerId === worker.id)
+    // Use the already fetched workers data from state
+    const workerConstraints = workers.map((worker: User) => {
+      const workerConstraints = constraints.filter((c: any) => c.workerId === worker.id)
       return {
         worker,
         constraints: workerConstraints
