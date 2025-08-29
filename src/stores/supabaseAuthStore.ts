@@ -19,6 +19,7 @@ interface SupabaseAuthState {
   removeWorker: (workerId: string) => Promise<void>
   initializeUsers: () => Promise<void>
   checkSession: () => Promise<User | null>
+  testDatabaseConnection: () => Promise<{ success: boolean; error: string | null }>
 }
 
 export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
@@ -208,7 +209,7 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
           .select('*')
           .eq('id', user.id)
           .single()
-        
+
         if (!error && data) {
           // User exists, restore session
           set({ user })
@@ -225,6 +226,30 @@ export const useSupabaseAuthStore = create<SupabaseAuthState>((set, get) => ({
       localStorage.removeItem('user')
       set({ user: null })
       return null
+    }
+  },
+
+  // Test database connection and table existence
+  testDatabaseConnection: async () => {
+    try {
+      console.log('Testing database connection...')
+      
+      // Test basic connection
+      const { data, error } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1)
+      
+      if (error) {
+        console.error('Database connection test failed:', error)
+        return { success: false, error: error.message }
+      }
+      
+      console.log('Database connection successful')
+      return { success: true, error: null }
+    } catch (error) {
+      console.error('Database test error:', error)
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   }
 }))

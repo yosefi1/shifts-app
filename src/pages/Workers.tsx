@@ -25,7 +25,7 @@ import {
 } from '@mui/material'
 import { ArrowBack, Add, Edit, Delete, People } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
+import { useSupabaseAuthStore, User } from '../stores/supabaseAuthStore'
 
 export default function Workers() {
   const navigate = useNavigate()
@@ -42,17 +42,35 @@ export default function Workers() {
   const [error, setError] = useState<string | null>(null)
 
   // Get real workers from auth store
-  const { getAllUsers, updateWorker, addWorker, removeWorker } = useSupabaseAuthStore()
-  const [workers, setWorkers] = useState<any[]>([])
-  
+  const { getAllUsers, updateWorker, addWorker, removeWorker, testDatabaseConnection } = useSupabaseAuthStore()
+  const [workers, setWorkers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
   // Load users on component mount
   useEffect(() => {
     const loadUsers = async () => {
       const users = await getAllUsers()
-      setWorkers(users.filter(user => user.role === 'worker'))
+      setWorkers(users.filter((user: User) => user.role === 'worker'))
     }
     loadUsers()
   }, [getAllUsers])
+
+  // Test database connection
+  const handleTestConnection = async () => {
+    try {
+      setIsLoading(true)
+      const result = await testDatabaseConnection()
+      if (result.success) {
+        alert('חיבור למסד הנתונים תקין!')
+      } else {
+        alert(`שגיאה בחיבור למסד הנתונים: ${result.error}`)
+      }
+    } catch (error) {
+      alert('שגיאה בבדיקת החיבור')
+    } finally {
+      setIsLoading(false)
+    }
+  }
   
   // Workers management functions
   const handleAddWorker = async () => {
@@ -123,18 +141,27 @@ export default function Workers() {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">רשימת עובדים</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => {
-            setEditingWorker(null)
-            setNewWorker({ id: '', name: '', gender: 'male', keepShabbat: true })
-            setError(null)
-            setWorkersDialogOpen(true)
-          }}
-        >
-          הוסף עובד
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={handleTestConnection}
+            disabled={isLoading}
+          >
+            {isLoading ? 'בודק...' : 'בדוק חיבור DB'}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => {
+              setEditingWorker(null)
+              setNewWorker({ id: '', name: '', gender: 'male', keepShabbat: true })
+              setError(null)
+              setWorkersDialogOpen(true)
+            }}
+          >
+            הוסף עובד
+          </Button>
+        </Box>
       </Box>
       
       <TableContainer component={Paper}>
