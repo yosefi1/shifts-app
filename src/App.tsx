@@ -1,4 +1,4 @@
-import { useAuthStore } from './stores/authStore'
+import { useSupabaseAuthStore } from './stores/supabaseAuthStore'
 import Login from './pages/Login'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -9,7 +9,7 @@ import Workers from './pages/Workers'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
 export default function App() {
-  const user = useAuthStore((s) => s.user)
+  const user = useSupabaseAuthStore((s) => s.user)
 
   if (!user) {
     return <Login />

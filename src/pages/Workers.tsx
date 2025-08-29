@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Typography, 
@@ -25,7 +25,7 @@ import {
 } from '@mui/material'
 import { ArrowBack, Add, Edit, Delete, People } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 
 export default function Workers() {
   const navigate = useNavigate()
@@ -42,15 +42,25 @@ export default function Workers() {
   const [error, setError] = useState<string | null>(null)
 
   // Get real workers from auth store
-  const { getAllUsers, updateWorker, addWorker, removeWorker } = useAuthStore()
-  const allUsers = getAllUsers()
-  const workers = allUsers.filter(user => user.role === 'worker')
+  const { getAllUsers, updateWorker, addWorker, removeWorker } = useSupabaseAuthStore()
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [workers, setWorkers] = useState<any[]>([])
+  
+  // Load users on component mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      const users = await getAllUsers()
+      setAllUsers(users)
+      setWorkers(users.filter(user => user.role === 'worker'))
+    }
+    loadUsers()
+  }, [getAllUsers])
   
   // Workers management functions
-  const handleAddWorker = () => {
+  const handleAddWorker = async () => {
     try {
       setError(null)
-      addWorker({
+      await addWorker({
         id: newWorker.id,
         name: newWorker.name,
         role: 'worker',
@@ -59,16 +69,20 @@ export default function Workers() {
       })
       setNewWorker({ id: '', name: '', gender: 'male', keepShabbat: true })
       setWorkersDialogOpen(false)
+      // Reload users
+      const users = await getAllUsers()
+      setAllUsers(users)
+      setWorkers(users.filter(user => user.role === 'worker'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'שגיאה בהוספת עובד')
     }
   }
   
-  const handleEditWorker = () => {
+  const handleEditWorker = async () => {
     if (editingWorker) {
       try {
         setError(null)
-        updateWorker(editingWorker.id, {
+        await updateWorker(editingWorker.id, {
           id: editingWorker.id,
           name: editingWorker.name,
           gender: editingWorker.gender,
@@ -76,15 +90,27 @@ export default function Workers() {
         })
         setEditingWorker(null)
         setWorkersDialogOpen(false)
+        // Reload users
+        const users = await getAllUsers()
+        setAllUsers(users)
+        setWorkers(users.filter(user => user.role === 'worker'))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'שגיאה בעריכת עובד')
       }
     }
   }
   
-  const handleDeleteWorker = (workerId: string) => {
+  const handleDeleteWorker = async (workerId: string) => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק עובד זה?')) {
-      removeWorker(workerId)
+      try {
+        await removeWorker(workerId)
+        // Reload users
+        const users = await getAllUsers()
+        setAllUsers(users)
+        setWorkers(users.filter(user => user.role === 'worker'))
+      } catch (err) {
+        setError('שגיאה במחיקת עובד')
+      }
     }
   }
 

@@ -1,21 +1,31 @@
 import { useState } from 'react'
 import { Box, Card, CardContent, Typography, TextField, Button } from '@mui/material'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
   const [personalNumber, setPersonalNumber] = useState('')
   const [error, setError] = useState('')
-  const { login } = useAuthStore()
+  const { login } = useSupabaseAuthStore()
   const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const user = login(personalNumber)
-    if (user) {
-      navigate('/')
-    } else {
-      setError('מספר אישי לא תקין (0-17)')
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      const user = await login(personalNumber)
+      if (user) {
+        navigate('/')
+      } else {
+        setError('מספר אישי לא תקין או לא נמצא במערכת')
+      }
+    } catch (error) {
+      setError('שגיאה בחיבור למסד הנתונים')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -40,8 +50,14 @@ export default function Login() {
               sx={{ mb: 2 }}
             />
             {error && <Typography color="error" align="center">{error}</Typography>}
-            <Button type="submit" variant="contained" color="primary" fullWidth>
-              כניסה
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary" 
+              fullWidth
+              disabled={isLoading}
+            >
+              {isLoading ? 'מתחבר...' : 'כניסה'}
             </Button>
           </form>
         </CardContent>
