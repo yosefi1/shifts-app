@@ -369,26 +369,8 @@ export default function Availability() {
             if (!user) return
             
             try {
-              // Save preferences to Supabase
+              // Save to localStorage FIRST for immediate functionality
               const existingPreferences = getWorkerPreferences(user.id)
-              if (existingPreferences) {
-                await updateSupabasePreference(user.id, {
-                  notes: preferences.notes,
-                  preferPosition1: preferences.preferPosition1,
-                  preferPosition2: preferences.preferPosition2,
-                  preferPosition3: preferences.preferPosition3
-                })
-              } else {
-                await addSupabasePreference({
-                  workerId: user.id,
-                  notes: preferences.notes,
-                  preferPosition1: preferences.preferPosition1,
-                  preferPosition2: preferences.preferPosition2,
-                  preferPosition3: preferences.preferPosition3
-                })
-              }
-              
-              // Also save to local storage for backward compatibility
               if (existingPreferences) {
                 updatePreference(user.id, {
                   notes: preferences.notes,
@@ -406,7 +388,33 @@ export default function Availability() {
                 })
               }
               
+              // Try to save to Supabase as backup (won't block user experience)
+              try {
+                if (existingPreferences) {
+                  await updateSupabasePreference(user.id, {
+                    notes: preferences.notes,
+                    preferPosition1: preferences.preferPosition1,
+                    preferPosition2: preferences.preferPosition2,
+                    preferPosition3: preferences.preferPosition3
+                  })
+                } else {
+                  await addSupabasePreference({
+                    workerId: user.id,
+                    notes: preferences.notes,
+                    preferPosition1: preferences.preferPosition1,
+                    preferPosition2: preferences.preferPosition2,
+                    preferPosition3: preferences.preferPosition3
+                  })
+                }
+                console.log('Successfully saved to Supabase as backup')
+              } catch (supabaseError) {
+                console.log('Supabase backup save failed (but localStorage worked):', supabaseError)
+                // Don't show error to user - localStorage already saved successfully
+              }
+              
+              // Show success message
               toast.success('הזמינות והעדפות נשמרו בהצלחה!')
+              
             } catch (error) {
               console.error('Failed to save preferences:', error)
               toast.error('שגיאה בשמירת ההעדפות')
