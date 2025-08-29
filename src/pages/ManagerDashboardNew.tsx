@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Box, 
   Typography, 
@@ -25,7 +25,7 @@ import {
 import { ArrowBack, AutoFixHigh, Visibility, History, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useShiftsStore } from '../stores/shiftsStore'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 
 export default function ManagerDashboardNew() {
@@ -99,9 +99,19 @@ export default function ManagerDashboardNew() {
   const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
 
   // Get real workers from auth store
-  const { getAllUsers } = useAuthStore()
-  const allUsers = getAllUsers()
-  const workers = allUsers.filter(user => user.role === 'worker')
+  const { getAllUsers } = useSupabaseAuthStore()
+  const [allUsers, setAllUsers] = useState<any[]>([])
+  const [workers, setWorkers] = useState<any[]>([])
+  
+  // Load users on component mount
+  useEffect(() => {
+    const loadUsers = async () => {
+      const users = await getAllUsers()
+      setAllUsers(users)
+      setWorkers(users.filter(user => user.role === 'worker'))
+    }
+    loadUsers()
+  }, [getAllUsers])
 
   // Demo positions (based on the photo)
   const demoPositions = [

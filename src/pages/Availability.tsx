@@ -29,13 +29,13 @@ import {
 } from '@mui/material'
 import { ArrowBack, Info, Edit, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export default function Availability() {
-  const { user } = useAuthStore()
+  const { user } = useSupabaseAuthStore()
   const { constraints, addConstraint, removeConstraint, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
   const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,

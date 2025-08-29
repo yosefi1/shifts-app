@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Box, Typography, Tabs, Tab, List, ListItem, ListItemText, IconButton } from '@mui/material'
 import { ArrowBack } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { useShiftsStore } from '../stores/shiftsStore'
 import { format, isToday, isPast, isFuture } from 'date-fns'
 
 export default function Shifts() {
-  const { user } = useAuthStore()
+  const { user } = useSupabaseAuthStore()
   const { shifts } = useShiftsStore()
   const [tabValue, setTabValue] = useState(0)
   const navigate = useNavigate()

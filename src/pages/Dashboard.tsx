@@ -1,10 +1,10 @@
 import { Box, Typography, Card, CardContent, Button, Grid } from '@mui/material'
 import { People } from '@mui/icons-material'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { useNavigate } from 'react-router-dom'
 
 export default function Dashboard() {
-  const { user } = useAuthStore()
+  const { user } = useSupabaseAuthStore()
   const navigate = useNavigate()
 
   if (user?.role === 'manager') {

@@ -29,7 +29,7 @@ import {
   ChevronRight,
 } from '@mui/icons-material'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuthStore } from '../stores/authStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 
 const drawerWidth = 240
 
@@ -45,7 +45,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, setUser } = useAuthStore()
+  const { user, setUser } = useSupabaseAuthStore()
 
   const handleDrawerToggle = () => {
     if (isMobile) {
