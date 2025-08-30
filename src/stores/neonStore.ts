@@ -80,7 +80,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   login: async (userId: string) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       const result = await sql`SELECT * FROM users WHERE id = ${userId}`
       
       if (result.length > 0) {
@@ -97,7 +97,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   getAllUsers: async () => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       const result = await sql`SELECT * FROM users ORDER BY id`
       const users = result as User[]
       set({ users })
@@ -110,7 +110,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   addWorker: async (worker: Omit<User, 'id' | 'created_at'> & { id: string }) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`
         INSERT INTO users (id, name, role, gender, keepShabbat, created_at) 
         VALUES (${worker.id}, ${worker.name}, ${worker.role}, ${worker.gender}, ${worker.keepShabbat}, NOW())
@@ -124,7 +124,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   updateWorker: async (userId, updates) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       // Build dynamic update query
       const updateFields = Object.entries(updates)
         .filter(([_, value]) => value !== undefined)
@@ -143,7 +143,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   removeWorker: async (userId) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`DELETE FROM users WHERE id = ${userId}`
       return true
     } catch (error) {
@@ -154,7 +154,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   getConstraints: async (workerId) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       let result
       
       if (workerId) {
@@ -174,7 +174,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   addConstraint: async (constraint) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`
         INSERT INTO constraints (workerId, date, timeSlot, reason, isBlocked, created_at) 
         VALUES (${constraint.workerId}, ${constraint.date}, ${constraint.timeSlot}, ${constraint.reason}, ${constraint.isBlocked}, NOW())
@@ -188,7 +188,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   updateConstraint: async (constraintId, updates) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`
         UPDATE constraints 
         SET reason = ${updates.reason || ''}, isBlocked = ${updates.isBlocked ?? true}
@@ -203,7 +203,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   removeConstraint: async (constraintId) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`DELETE FROM constraints WHERE id = ${constraintId}`
       return true
     } catch (error) {
@@ -214,7 +214,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   getPreferences: async (workerId) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       const result = await sql`SELECT * FROM preferences WHERE workerId = ${workerId} LIMIT 1`
       
       if (result.length > 0) {
@@ -229,7 +229,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   addPreference: async (preference) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`
         INSERT INTO preferences (workerId, notes, preferPosition1, preferPosition2, preferPosition3, created_at, updated_at) 
         VALUES (${preference.workerId}, ${preference.notes}, ${preference.preferPosition1}, ${preference.preferPosition2}, ${preference.preferPosition3}, NOW(), NOW())
@@ -243,7 +243,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
 
   updatePreference: async (workerId, updates) => {
     try {
-      const sql = neon(process.env.DATABASE_URL || '')
+      const sql = neon(import.meta.env.VITE_DATABASE_URL || '')
       await sql`
         UPDATE preferences 
         SET notes = ${updates.notes || ''}, 
