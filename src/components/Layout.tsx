@@ -60,22 +60,23 @@ export default function Layout() {
   }
 
   const handleLogout = () => {
-    // setUser(null) // This line was removed as per the new_code
-    navigate('/')
+    // For now, just navigate to login
+    navigate('/login')
     handleProfileMenuClose()
   }
 
-  const menuItems = user?.role === 'manager' 
-    ? [
-        { text: 'ראשי', icon: <Dashboard />, path: '/' },
-        { text: 'ניהול (למנהל בלבד)', icon: <Settings />, path: '/manager' },
-      ]
-    : [
-        { text: 'ראשי', icon: <Dashboard />, path: '/' },
-        { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
-        { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
-        { text: 'אילוצים', icon: <Schedule />, path: '/constraints' },
-      ]
+  const menuItems = [
+    { text: 'ראשי', icon: <Dashboard />, path: '/dashboard' },
+    { text: 'הגשת זמינות', icon: <Schedule />, path: '/availability' },
+    { text: 'המשמרות שלי', icon: <Person />, path: '/shifts' },
+    { text: 'אילוצים', icon: <Schedule />, path: '/constraints' },
+  ]
+
+  if (user?.role === 'manager') {
+    menuItems.push(
+      { text: 'ניהול (למנהל בלבד)', icon: <Settings />, path: '/manager' }
+    )
+  }
 
   const drawer = (
     <div>
