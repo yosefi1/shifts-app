@@ -1,24 +1,32 @@
 import { neon } from '@neondatabase/serverless'
-import type { VercelRequest, VercelResponse } from '@vercel/node'
 
-const sql = neon(process.env.DATABASE_URL!)
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
+    // Check if DATABASE_URL is available
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL not found in environment variables')
+      return res.status(500).json({ error: 'Database configuration missing' })
+    }
+
+    const sql = neon(process.env.DATABASE_URL)
     const { action, data } = req.body
+
+    console.log('API call:', action, data) // Debug log
 
     switch (action) {
       case 'login':
         const { userId } = data
         const user = await sql`SELECT * FROM users WHERE id = ${userId}`
+        console.log('Login result:', user) // Debug log
         return res.json({ success: true, data: user[0] || null })
 
       case 'getAllUsers':
         const users = await sql`SELECT * FROM users ORDER BY id`
+        console.log('Users result:', users.length) // Debug log
         return res.json({ success: true, data: users })
 
       case 'addWorker':
@@ -114,6 +122,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   } catch (error) {
     console.error('Database error:', error)
-    return res.status(500).json({ error: 'Database error', details: error })
+    return res.status(500).json({ 
+      error: 'Database error', 
+      details: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
   }
 }
