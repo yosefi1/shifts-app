@@ -388,7 +388,7 @@ export default function Availability() {
                 })
               }
               
-              // Try to save to Supabase as backup (won't block user experience)
+              // Try to save to Supabase for cross-device sync
               try {
                 if (existingPreferences) {
                   await updateSupabasePreference(user.id, {
@@ -406,15 +406,13 @@ export default function Availability() {
                     preferPosition3: preferences.preferPosition3
                   })
                 }
-                console.log('Successfully saved to Supabase as backup')
+                console.log('Successfully saved to Supabase for cross-device sync')
               } catch (supabaseError) {
-                console.log('Supabase backup save failed (but localStorage worked):', supabaseError)
+                console.log('Supabase save failed (but localStorage worked):', supabaseError)
                 // Don't show error to user - localStorage already saved successfully
               }
               
-              // Show success message
               toast.success('הזמינות והעדפות נשמרו בהצלחה!')
-              
             } catch (error) {
               console.error('Failed to save preferences:', error)
               toast.error('שגיאה בשמירת ההעדפות')
