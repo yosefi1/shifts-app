@@ -1,22 +1,64 @@
-import { HashRouter as Router, Routes, Route } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useSupabaseAuthStore } from './stores/supabaseAuthStore'
+import Layout from './components/Layout'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import ManagerDashboard from './pages/ManagerDashboard'
+import ManagerDashboardNew from './pages/ManagerDashboardNew'
+import Shifts from './pages/Shifts'
+import Workers from './pages/Workers'
+import Availability from './pages/Availability'
+import Constraints from './pages/Constraints'
 
-function App() {
+export default function App() {
+  const { user, checkSession } = useSupabaseAuthStore()
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Check for existing session on app start
+  useEffect(() => {
+    const initApp = async () => {
+      try {
+        await checkSession()
+      } catch (error) {
+        console.error('Failed to check session:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    initApp()
+  }, [checkSession])
+
+  // Show loading while checking session
+  if (isLoading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        טוען...
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <Login />
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={
-          <div style={{ padding: '20px', textAlign: 'center' }}>
-            <h1>Shifts App - Test Page</h1>
-            <p>If you can see this, basic React is working!</p>
-            <p>HashRouter test - should fix crashes</p>
-            <p>Firebase status: Loading...</p>
-          </div>
-        } />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/availability" element={<Availability />} />
+        <Route path="/shifts" element={<Shifts />} />
+        <Route path="/constraints" element={<Constraints />} />
+        {user.role === 'manager' && <Route path="/manager" element={<ManagerDashboard />} />}
+        {user.role === 'manager' && <Route path="/workers" element={<Workers />} />}
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   )
 }
-
-export default App
-
-// Trigger Vercel build
