@@ -1,9 +1,13 @@
 import React from 'react'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useNeonStore } from '../stores/neonStore'
 import { Schedule, People, Dashboard, ExitToApp } from '@mui/icons-material'
 
-const Layout: React.FC = () => {
+interface LayoutProps {
+  children: React.ReactNode
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentUser } = useNeonStore()
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,7 +102,7 @@ const Layout: React.FC = () => {
 
       {/* Main Content */}
       <div style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
-        <Outlet />
+        {children}
       </div>
     </div>
   )

@@ -52,7 +52,7 @@ interface NeonStore {
   // Actions
   login: (userId: string) => Promise<User | null>
   getAllUsers: () => Promise<User[]>
-  addWorker: (worker: Omit<User, 'id'>) => Promise<boolean>
+  addWorker: (worker: Omit<User, 'id' | 'created_at'> & { id: string }) => Promise<boolean>
   updateWorker: (userId: string, updates: Partial<User>) => Promise<boolean>
   removeWorker: (userId: string) => Promise<boolean>
   
@@ -108,7 +108,7 @@ export const useNeonStore = create<NeonStore>((set, get) => ({
     }
   },
 
-  addWorker: async (worker) => {
+  addWorker: async (worker: Omit<User, 'id' | 'created_at'> & { id: string }) => {
     try {
       const sql = neon(process.env.DATABASE_URL || '')
       await sql`

@@ -5,11 +5,17 @@ const Workers: React.FC = () => {
   const { users, getAllUsers, addWorker, updateWorker, removeWorker } = useNeonStore()
   const [isAddingWorker, setIsAddingWorker] = useState(false)
   const [editingWorker, setEditingWorker] = useState<string | null>(null)
-  const [newWorker, setNewWorker] = useState({
+  const [newWorker, setNewWorker] = useState<{
+    id: string
+    name: string
+    role: 'manager' | 'worker'
+    gender: 'male' | 'female'
+    keepShabbat: boolean
+  }>({
     id: '',
     name: '',
-    role: 'worker' as const,
-    gender: 'male' as const,
+    role: 'worker',
+    gender: 'male',
     keepShabbat: true
   })
   const [message, setMessage] = useState('')

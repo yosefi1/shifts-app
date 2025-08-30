@@ -127,10 +127,6 @@ const Availability: React.FC = () => {
     return dayNames[date.getDay()]
   }
 
-  const getTimeSlotLabel = (timeSlot: 'first' | 'second') => {
-    return timeSlot === 'first' ? '20:00-00:00' : '08:00-12:00'
-  }
-
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
       <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
