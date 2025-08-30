@@ -6,13 +6,18 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // Check if DATABASE_URL is available
-    if (!process.env.DATABASE_URL) {
-      console.error('DATABASE_URL not found in environment variables')
+    // Try multiple environment variable names
+    const databaseUrl = process.env.DB_CONNECTION_STRING || process.env.DATABASE_URL || process.env.POSTGRES_URL
+    
+    if (!databaseUrl) {
+      console.error('No database URL found in environment variables')
+      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('POSTGRES') || key.includes('DB')))
       return res.status(500).json({ error: 'Database configuration missing' })
     }
 
-    const sql = neon(process.env.DATABASE_URL)
+    console.log('Using database URL:', databaseUrl.substring(0, 30) + '...')
+    
+    const sql = neon(databaseUrl)
     const { action, data } = req.body
 
     console.log('API call:', action, data) // Debug log
@@ -100,7 +105,7 @@ export default async function handler(req: any, res: any) {
         const { workerId: prefAddWorkerId, notes, preferPosition1, preferPosition2, preferPosition3 } = data
         await sql`
           INSERT INTO preferences (workerId, notes, preferPosition1, preferPosition2, preferPosition3, created_at, updated_at) 
-          VALUES (${prefAddWorkerId}, ${notes}, ${preferPosition1}, ${preferPosition2}, ${preferPosition3}, NOW(), NOW())
+          VALUES (${prefAddWorkerId}, ${notes}, ${preferPosition1}, ${preferPosition2}, ${prefPosition3}, NOW(), NOW())
         `
         return res.json({ success: true })
 
