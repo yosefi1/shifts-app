@@ -35,16 +35,46 @@ CREATE TABLE IF NOT EXISTS constraints (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create preferences table
-CREATE TABLE IF NOT EXISTS preferences (
-  id TEXT PRIMARY KEY,
-  workerId TEXT NOT NULL REFERENCES users(id) UNIQUE,
+-- Force refresh preferences table schema cache by using new name
+DROP TABLE IF EXISTS preferences CASCADE;
+DROP TABLE IF EXISTS worker_preferences CASCADE;
+
+CREATE TABLE worker_preferences (
+  id SERIAL PRIMARY KEY,
+  workerId TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   notes TEXT,
   preferPosition1 TEXT,
   preferPosition2 TEXT,
   preferPosition3 TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add RLS policies
+ALTER TABLE worker_preferences ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Users can view their own preferences" ON worker_preferences;
+CREATE POLICY "Users can view their own preferences" ON worker_preferences
+  FOR SELECT USING (auth.uid()::text = workerId);
+
+DROP POLICY IF EXISTS "Users can insert their own preferences" ON worker_preferences;
+CREATE POLICY "Users can insert their own preferences" ON worker_preferences
+  FOR INSERT WITH CHECK (auth.uid()::text = workerId);
+
+DROP POLICY IF EXISTS "Users can update their own preferences" ON worker_preferences;
+CREATE POLICY "Users can update their own preferences" ON worker_preferences
+  FOR UPDATE USING (auth.uid()::text = workerId);
+
+DROP POLICY IF EXISTS "Users can delete their own preferences" ON worker_preferences;
+CREATE POLICY "Users can delete their own preferences" ON worker_preferences
+  FOR DELETE USING (auth.uid()::text = workerId);
+
+-- Manager can view all preferences
+DROP POLICY IF EXISTS "Managers can view all preferences" ON worker_preferences;
+CREATE POLICY "Managers can view all preferences" ON worker_preferences
+  FOR SELECT USING (EXISTS (
+    SELECT 1 FROM users WHERE id = auth.uid()::text AND role = 'manager'
+  ));
 
 -- Insert initial users
 INSERT INTO users (id, name, role, gender, keepShabbat) VALUES
@@ -73,24 +103,37 @@ ON CONFLICT (id) DO NOTHING;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE shifts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE constraints ENABLE ROW LEVEL SECURITY;
-ALTER TABLE preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE worker_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public read access (all users can read all data)
+DROP POLICY IF EXISTS "Allow public read access" ON users;
 CREATE POLICY "Allow public read access" ON users FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read access" ON shifts;
 CREATE POLICY "Allow public read access" ON shifts FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read access" ON constraints;
 CREATE POLICY "Allow public read access" ON constraints FOR SELECT USING (true);
-CREATE POLICY "Allow public read access" ON preferences FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow public read access" ON worker_preferences;
+CREATE POLICY "Allow public read access" ON worker_preferences FOR SELECT USING (true);
 
 -- Create policies for authenticated users to insert/update their own data
+DROP POLICY IF EXISTS "Allow users to insert their own constraints" ON constraints;
 CREATE POLICY "Allow users to insert their own constraints" ON constraints FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow users to update their own constraints" ON constraints;
 CREATE POLICY "Allow users to update their own constraints" ON constraints FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow users to delete their own constraints" ON constraints;
 CREATE POLICY "Allow users to delete their own constraints" ON constraints FOR DELETE USING (true);
 
-CREATE POLICY "Allow users to insert their own preferences" ON preferences FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow users to update their own preferences" ON preferences FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Allow users to insert their own preferences" ON worker_preferences;
+CREATE POLICY "Allow users to insert their own preferences" ON worker_preferences FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Allow users to update their own preferences" ON worker_preferences;
+CREATE POLICY "Allow users to update their own preferences" ON worker_preferences FOR UPDATE USING (true);
 
 -- Create policies for managers to manage all data
+DROP POLICY IF EXISTS "Allow managers to manage all data" ON users;
 CREATE POLICY "Allow managers to manage all data" ON users FOR ALL USING (true);
+DROP POLICY IF EXISTS "Allow managers to manage all shifts" ON shifts;
 CREATE POLICY "Allow managers to manage all shifts" ON shifts FOR ALL USING (true);
+DROP POLICY IF EXISTS "Allow managers to manage all constraints" ON constraints;
 CREATE POLICY "Allow managers to manage all constraints" ON constraints FOR ALL USING (true);
-CREATE POLICY "Allow managers to manage all preferences" ON preferences FOR ALL USING (true);
+DROP POLICY IF EXISTS "Allow managers to manage all preferences" ON worker_preferences;
+CREATE POLICY "Allow managers to manage all preferences" ON worker_preferences FOR ALL USING (true);

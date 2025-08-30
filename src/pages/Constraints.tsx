@@ -200,15 +200,16 @@ export default function Constraints() {
             placeholder="למה לא תוכל לעבוד? (חופשה, פגישה רפואית, וכו')"
           />
 
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isSubmitting}
-            startIcon={<Add />}
-            sx={{ alignSelf: 'flex-start' }}
-          >
-            {isSubmitting ? 'מוסיף...' : 'הוסף אילוץ'}
-          </Button>
+                     <Button
+             type="submit"
+             variant="contained"
+             disabled={isSubmitting}
+             startIcon={<Add />}
+             sx={{ alignSelf: 'flex-start' }}
+             onClick={() => console.log('Button clicked!')}
+           >
+             {isSubmitting ? 'מוסיף...' : 'הוסף אילוץ'}
+           </Button>
         </Box>
       </Paper>
 

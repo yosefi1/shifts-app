@@ -1,65 +1,48 @@
-import { useSupabaseAuthStore } from './stores/supabaseAuthStore'
-import Login from './pages/Login'
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { useFirebaseStore } from './stores/firebaseStore'
+import { initializeFirebaseData } from './lib/initFirebaseData'
 import Layout from './components/Layout'
+import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
-import Availability from './pages/Availability'
+import ManagerDashboard from './pages/ManagerDashboard'
+import ManagerDashboardNew from './pages/ManagerDashboardNew'
 import Shifts from './pages/Shifts'
-import ManagerDashboard from './pages/ManagerDashboardNew'
 import Workers from './pages/Workers'
+import Availability from './pages/Availability'
 import Constraints from './pages/Constraints'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 
-export default function App() {
-  const { user, checkSession } = useSupabaseAuthStore()
-  const [isLoading, setIsLoading] = useState(true)
+function App() {
+  const { initialize } = useFirebaseStore()
 
-  // Check for existing session on app start
   useEffect(() => {
-    const initApp = async () => {
-      try {
-        await checkSession()
-      } catch (error) {
-        console.error('Failed to check session:', error)
-      } finally {
-        setIsLoading(false)
-      }
+    // Initialize Firebase store and data
+    const setupFirebase = async () => {
+      await initialize()
+      await initializeFirebaseData()
     }
-    initApp()
-  }, [checkSession])
-
-  // Show loading while checking session
-  if (isLoading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        fontSize: '18px'
-      }}>
-        טוען...
-      </div>
-    )
-  }
-
-  if (!user) {
-    return <Login />
-  }
+    setupFirebase()
+  }, [initialize])
 
   return (
-    <Layout>
+    <Router>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/availability" element={<Availability />} />
-        <Route path="/shifts" element={<Shifts />} />
-        <Route path="/constraints" element={<Constraints />} />
-        {user.role === 'manager' && <Route path="/manager" element={<ManagerDashboard />} />}
-        {user.role === 'manager' && <Route path="/workers" element={<Workers />} />}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="manager" element={<ManagerDashboard />} />
+          <Route path="manager-new" element={<ManagerDashboardNew />} />
+          <Route path="shifts" element={<Shifts />} />
+          <Route path="workers" element={<Workers />} />
+          <Route path="availability" element={<Availability />} />
+          <Route path="constraints" element={<Constraints />} />
+        </Route>
       </Routes>
-    </Layout>
+    </Router>
   )
 }
+
+export default App
  
  

@@ -29,14 +29,12 @@ import {
 } from '@mui/material'
 import { ArrowBack, Info, Edit, Delete } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
-import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
-import { useShiftsStore } from '../stores/shiftsStore'
+import { useFirebaseStore } from '../stores/firebaseStore'
 import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export default function Availability() {
-  const { user, addPreference: addSupabasePreference, updatePreference: updateSupabasePreference } = useSupabaseAuthStore()
-  const { constraints, addConstraint, removeConstraint, addPreference, updatePreference, getWorkerPreferences } = useShiftsStore()
+  const { currentUser: user, addPreference, updatePreference, getPreferences, constraints, addConstraint, removeConstraint } = useFirebaseStore()
   const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
     open: false,
     date: '',
@@ -52,18 +50,21 @@ export default function Availability() {
 
   // Load existing preferences on component mount
   useEffect(() => {
-    if (user) {
-      const existingPreferences = getWorkerPreferences(user.id)
-      if (existingPreferences) {
-        setPreferences({
-          notes: existingPreferences.notes,
-          preferPosition1: existingPreferences.preferPosition1,
-          preferPosition2: existingPreferences.preferPosition2,
-          preferPosition3: existingPreferences.preferPosition3
-        })
+    const loadPreferences = async () => {
+      if (user) {
+        const existingPreferences = await getPreferences(user.id)
+        if (existingPreferences) {
+          setPreferences({
+            notes: existingPreferences.notes,
+            preferPosition1: existingPreferences.preferPosition1,
+            preferPosition2: existingPreferences.preferPosition2,
+            preferPosition3: existingPreferences.preferPosition3
+          })
+        }
       }
     }
-  }, [user, getWorkerPreferences])
+    loadPreferences()
+  }, [user, getPreferences])
   const navigate = useNavigate()
 
   const nextWeekStart = startOfWeek(addDays(new Date(), 7))
@@ -369,17 +370,16 @@ export default function Availability() {
             if (!user) return
             
             try {
-              // Save to localStorage FIRST for immediate functionality
-              const existingPreferences = getWorkerPreferences(user.id)
+              const existingPreferences = await getPreferences(user.id)
               if (existingPreferences) {
-                updatePreference(user.id, {
+                await updatePreference(user.id, {
                   notes: preferences.notes,
                   preferPosition1: preferences.preferPosition1,
                   preferPosition2: preferences.preferPosition2,
                   preferPosition3: preferences.preferPosition3
                 })
               } else {
-                addPreference({
+                await addPreference({
                   workerId: user.id,
                   notes: preferences.notes,
                   preferPosition1: preferences.preferPosition1,
@@ -388,30 +388,7 @@ export default function Availability() {
                 })
               }
               
-              // Try to save to Supabase for cross-device sync
-              try {
-                if (existingPreferences) {
-                  await updateSupabasePreference(user.id, {
-                    notes: preferences.notes,
-                    preferPosition1: preferences.preferPosition1,
-                    preferPosition2: preferences.preferPosition2,
-                    preferPosition3: preferences.preferPosition3
-                  })
-                } else {
-                  await addSupabasePreference({
-                    workerId: user.id,
-                    notes: preferences.notes,
-                    preferPosition1: preferences.preferPosition1,
-                    preferPosition2: preferences.preferPosition2,
-                    preferPosition3: preferences.preferPosition3
-                  })
-                }
-                console.log('Successfully saved to Supabase for cross-device sync')
-              } catch (supabaseError) {
-                console.log('Supabase save failed (but localStorage worked):', supabaseError)
-                // Don't show error to user - localStorage already saved successfully
-              }
-              
+              console.log('Successfully saved to Firebase for cross-device sync')
               toast.success('הזמינות והעדפות נשמרו בהצלחה!')
             } catch (error) {
               console.error('Failed to save preferences:', error)

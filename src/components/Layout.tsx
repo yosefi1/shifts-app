@@ -28,16 +28,12 @@ import {
   ChevronLeft,
   ChevronRight,
 } from '@mui/icons-material'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
+import { useNavigate, useLocation, Outlet } from 'react-router-dom'
+import { useFirebaseStore } from '../stores/firebaseStore'
 
 const drawerWidth = 240
 
-interface LayoutProps {
-  children: React.ReactNode
-}
-
-export default function Layout({ children }: LayoutProps) {
+export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [desktopOpen, setDesktopOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -45,7 +41,7 @@ export default function Layout({ children }: LayoutProps) {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, setUser } = useSupabaseAuthStore()
+  const { currentUser: user } = useFirebaseStore()
 
   const handleDrawerToggle = () => {
     if (isMobile) {
@@ -64,7 +60,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   const handleLogout = () => {
-    setUser(null)
+    // setUser(null) // This line was removed as per the new_code
     navigate('/')
     handleProfileMenuClose()
   }
@@ -206,7 +202,7 @@ export default function Layout({ children }: LayoutProps) {
         }}
       >
         <Toolbar disableGutters />
-        {children}
+        <Outlet />
       </Box>
       <Menu
         anchorEl={anchorEl}
