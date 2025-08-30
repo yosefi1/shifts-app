@@ -10,7 +10,8 @@ import {
   query, 
   where,
   onSnapshot,
-  setDoc
+  Query,
+  CollectionReference
 } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 
@@ -154,7 +155,7 @@ export const useFirebaseStore = create<FirebaseStore>((set, get) => ({
 
   getConstraints: async (workerId) => {
     try {
-      let q = collection(db, 'constraints')
+      let q: CollectionReference | Query = collection(db, 'constraints')
       if (workerId) {
         q = query(q, where('workerId', '==', workerId))
       }

@@ -1,5 +1,5 @@
 import { db } from './firebase'
-import { collection, doc, setDoc } from 'firebase/firestore'
+import { doc, setDoc } from 'firebase/firestore'
 
 const initialUsers = [
   { id: '0', name: 'מנהל', role: 'manager' as const },
