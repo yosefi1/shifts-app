@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { useFirebaseStore } from './stores/firebaseStore'
 import { initializeFirebaseData } from './lib/initFirebaseData'
@@ -13,22 +13,43 @@ import Availability from './pages/Availability'
 import Constraints from './pages/Constraints'
 
 function App() {
-  const { initialize } = useFirebaseStore()
+  const { initialize, currentUser } = useFirebaseStore()
+  const [isInitialized, setIsInitialized] = useState(false)
 
   useEffect(() => {
     // Initialize Firebase store and data
     const setupFirebase = async () => {
-      await initialize()
-      await initializeFirebaseData()
+      try {
+        await initialize()
+        await initializeFirebaseData()
+        setIsInitialized(true)
+      } catch (error) {
+        console.error('Failed to initialize Firebase:', error)
+        setIsInitialized(true) // Continue anyway
+      }
     }
     setupFirebase()
   }, [initialize])
+
+  if (!isInitialized) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        טוען...
+      </div>
+    )
+  }
 
   return (
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+        <Route path="/" element={currentUser ? <Layout /> : <Navigate to="/login" replace />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="manager" element={<ManagerDashboard />} />

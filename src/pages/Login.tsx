@@ -1,67 +1,84 @@
 import { useState } from 'react'
-import { Box, Card, CardContent, Typography, TextField, Button } from '@mui/material'
-import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { useNavigate } from 'react-router-dom'
+import { useFirebaseStore } from '../stores/firebaseStore'
+import { Box, TextField, Button, Typography, Paper, Container } from '@mui/material'
 
 export default function Login() {
-  const [personalNumber, setPersonalNumber] = useState('')
-  const [error, setError] = useState('')
-  const { login } = useSupabaseAuthStore()
-  const navigate = useNavigate()
+  const [userId, setUserId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+  const { login } = useFirebaseStore()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!userId.trim()) return
+
     setIsLoading(true)
     setError('')
-    
+
     try {
-      const user = await login(personalNumber)
+      const user = await login(userId)
       if (user) {
-        navigate('/')
+        if (user.role === 'manager') {
+          navigate('/manager')
+        } else {
+          navigate('/availability')
+        }
       } else {
-        setError('מספר אישי לא תקין או לא נמצא במערכת')
+        setError('משתמש לא נמצא')
       }
-    } catch (error) {
-      setError('שגיאה בחיבור למסד הנתונים')
+    } catch (err) {
+      setError('שגיאה בהתחברות')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Box dir="rtl" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #e3f0ff 0%, #fafafa 100%)' }}>
-      <Card sx={{ minWidth: 350 }}>
-        <CardContent>
-          <Typography variant="h5" align="center" gutterBottom>
-            כניסה למערכת
+    <Container maxWidth="sm">
+      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Paper sx={{ p: 4, width: '100%' }}>
+          <Typography component="h1" variant="h5" align="center" gutterBottom>
+            התחברות למערכת ניהול משמרות
           </Typography>
-          <Typography variant="body2" align="center" color="textSecondary" sx={{ mb: 2 }}>
-            מספר אישי: 0 (מנהל) או 1-17 (עובדים)
-          </Typography>
-          <form onSubmit={handleLogin}>
+          
+          <Box component="form" onSubmit={handleLogin} sx={{ mt: 3 }}>
             <TextField
+              fullWidth
               label="מספר אישי"
-              variant="outlined"
-              fullWidth
-              value={personalNumber}
-              onChange={e => setPersonalNumber(e.target.value)}
-              inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', style: { direction: 'rtl' } }}
-              sx={{ mb: 2 }}
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              margin="normal"
+              required
+              autoFocus
+              dir="rtl"
             />
-            {error && <Typography color="error" align="center">{error}</Typography>}
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary" 
+            
+            {error && (
+              <Typography color="error" align="center" sx={{ mt: 2 }}>
+                {error}
+              </Typography>
+            )}
+            
+            <Button
+              type="submit"
               fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
               disabled={isLoading}
             >
-              {isLoading ? 'מתחבר...' : 'כניסה'}
+              {isLoading ? 'מתחבר...' : 'התחבר'}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </Box>
+            
+            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+              מנהל: הכנס 0
+              <br />
+              עובד: הכנס מספר אישי
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
   )
 } 
