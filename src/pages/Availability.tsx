@@ -1,432 +1,387 @@
-import { useState, useEffect } from 'react'
-import { 
-  Box, 
-  Typography, 
-  Button, 
-  Checkbox, 
-  FormControlLabel, 
-  Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Tooltip,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Divider
-} from '@mui/material'
-import { ArrowBack, Info, Edit, Delete } from '@mui/icons-material'
-import { useNavigate } from 'react-router-dom'
-import { useFirebaseStore } from '../stores/firebaseStore'
-import { format, addDays, startOfWeek, eachDayOfInterval } from 'date-fns'
-import toast from 'react-hot-toast'
+import React, { useState, useEffect } from 'react'
+import { useNeonStore } from '../stores/neonStore'
+import { format, startOfWeek, addDays } from 'date-fns'
+import { he } from 'date-fns/locale'
 
-export default function Availability() {
-  const { currentUser: user, addPreference, updatePreference, getPreferences, constraints, addConstraint, removeConstraint } = useFirebaseStore()
-  const [constraintDialog, setConstraintDialog] = useState<{ open: boolean; date: string; timeSlot: string }>({
-    open: false,
-    date: '',
-    timeSlot: ''
-  })
-  const [constraintReason, setConstraintReason] = useState('')
-  const [preferences, setPreferences] = useState({
-    notes: '',
-    preferPosition1: '',
-    preferPosition2: '',
-    preferPosition3: ''
-  })
+const Availability: React.FC = () => {
+  const { currentUser, addConstraint, getPreferences, addPreference, updatePreference } = useNeonStore()
+  const [constraints, setConstraints] = useState<{[key: string]: boolean}>({})
+  const [reasons, setReasons] = useState<{[key: string]: string}>({})
+  const [generalNotes, setGeneralNotes] = useState('')
+  const [preferPosition1, setPreferPosition1] = useState('')
+  const [preferPosition2, setPreferPosition2] = useState('')
+  const [preferPosition3, setPreferPosition3] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [message, setMessage] = useState('')
 
-  // Load existing preferences on component mount
+  // Get next week dates
+  const nextWeekStart = startOfWeek(addDays(new Date(), 7), { weekStartsOn: 0 })
+  const weekDates = Array.from({ length: 7 }, (_, i) => addDays(nextWeekStart, i))
+
   useEffect(() => {
-    const loadPreferences = async () => {
-      if (user) {
-        const existingPreferences = await getPreferences(user.id)
-        if (existingPreferences) {
-          setPreferences({
-            notes: existingPreferences.notes,
-            preferPosition1: existingPreferences.preferPosition1,
-            preferPosition2: existingPreferences.preferPosition2,
-            preferPosition3: existingPreferences.preferPosition3
+    if (currentUser) {
+      loadExistingPreferences()
+    }
+  }, [currentUser])
+
+  const loadExistingPreferences = async () => {
+    if (!currentUser) return
+    
+    try {
+      const preferences = await getPreferences(currentUser.id)
+      if (preferences) {
+        setGeneralNotes(preferences.notes || '')
+        setPreferPosition1(preferences.preferPosition1 || '')
+        setPreferPosition2(preferences.preferPosition2 || '')
+        setPreferPosition3(preferences.preferPosition3 || '')
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error)
+    }
+  }
+
+  const handleConstraintChange = (date: string, timeSlot: 'first' | 'second', checked: boolean) => {
+    const key = `${date}-${timeSlot}`
+    setConstraints(prev => ({ ...prev, [key]: checked }))
+    
+    if (!checked) {
+      setReasons(prev => {
+        const newReasons = { ...prev }
+        delete newReasons[key]
+        return newReasons
+      })
+    }
+  }
+
+  const handleReasonChange = (date: string, timeSlot: 'first' | 'second', reason: string) => {
+    const key = `${date}-${timeSlot}`
+    setReasons(prev => ({ ...prev, [key]: reason }))
+  }
+
+  const handleSave = async () => {
+    if (!currentUser) return
+    
+    setIsSubmitting(true)
+    setMessage('')
+
+    try {
+      // Save constraints
+      for (const [key, isBlocked] of Object.entries(constraints)) {
+        if (isBlocked) {
+          const [date, timeSlot] = key.split('-')
+          const reason = reasons[key] || 'אילוץ אישי'
+          
+          await addConstraint({
+            workerId: currentUser.id,
+            date,
+            timeSlot: timeSlot as 'first' | 'second',
+            reason,
+            isBlocked: true
           })
         }
       }
+
+      // Save preferences
+      const existingPreferences = await getPreferences(currentUser.id)
+      
+      if (existingPreferences) {
+        await updatePreference(currentUser.id, {
+          notes: generalNotes,
+          preferPosition1,
+          preferPosition2,
+          preferPosition3
+        })
+      } else {
+        await addPreference({
+          workerId: currentUser.id,
+          notes: generalNotes,
+          preferPosition1,
+          preferPosition2,
+          preferPosition3
+        })
+      }
+
+      setMessage('הזמינות וההעדפות נשמרו בהצלחה!')
+      
+      // Clear form after successful save
+      setTimeout(() => {
+        setConstraints({})
+        setReasons({})
+        setGeneralNotes('')
+        setPreferPosition1('')
+        setPreferPosition2('')
+        setPreferPosition3('')
+        setMessage('')
+      }, 2000)
+
+    } catch (error) {
+      console.error('Error saving preferences:', error)
+      setMessage('שגיאה בשמירת ההעדפות')
+    } finally {
+      setIsSubmitting(false)
     }
-    loadPreferences()
-  }, [user, getPreferences])
-  const navigate = useNavigate()
-
-  const nextWeekStart = startOfWeek(addDays(new Date(), 7))
-  const nextWeekDates = eachDayOfInterval({
-    start: nextWeekStart,
-    end: addDays(nextWeekStart, 7), // 8 days total (ראשון-ראשון)
-  })
-
-  const hebrewDays = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת', 'ראשון']
-  const timeSlots = [
-    { id: 'first', label: '20:00-00:00', description: 'משמרת ראשונה' },
-    { id: 'second', label: '08:00-12:00', description: 'משמרת שנייה' }
-  ]
-  
-  const availablePositions = [
-    'א\'', 'ב\'', 'ג\'', 'ד\'', 'ו\'', 'ז\'', 'ח\'', '20', 
-    'גישרון 11', 'גישרון 17', '5/6', '39א', '39ב', 
-    'סיור 10', 'סיור 10א', 'עתודות', 'אפטרים'
-  ]
-
-  const handleAddConstraint = (date: string, timeSlot: string) => {
-    setConstraintDialog({ open: true, date, timeSlot })
-    setConstraintReason('')
   }
 
-  const handleConstraintSave = () => {
-    const { date, timeSlot } = constraintDialog
-    if (!user) return
-
-    addConstraint({
-      workerId: user.id,
-      date,
-      timeSlot: timeSlot as 'first' | 'second',
-      reason: constraintReason,
-      isBlocked: true
-    })
-
-    setConstraintDialog({ open: false, date: '', timeSlot: '' })
-    setConstraintReason('')
-    toast.success('אילוץ נוסף בהצלחה')
+  const getDayName = (date: Date) => {
+    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+    return dayNames[date.getDay()]
   }
 
-  const handleConstraintCancel = () => {
-    setConstraintDialog({ open: false, date: '', timeSlot: '' })
-    setConstraintReason('')
-  }
-
-  const handleRemoveConstraint = (constraintId: string) => {
-    removeConstraint(constraintId)
-    toast.success('אילוץ הוסר בהצלחה')
-  }
-
-  const getConstraintForShift = (date: string, timeSlot: string) => {
-    if (!user) return null
-    return constraints.find(c => 
-      c.workerId === user.id && 
-      c.date === date && 
-      c.timeSlot === timeSlot
-    )
-  }
-
-  const hasConstraint = (date: string, timeSlot: string) => {
-    return getConstraintForShift(date, timeSlot) !== null
-  }
-
-  const handleToggleConstraint = (date: string, timeSlot: string) => {
-    const constraint = getConstraintForShift(date, timeSlot)
-    if (constraint) {
-      // Remove constraint if it exists
-      removeConstraint(constraint.id)
-      toast.success('אילוץ הוסר')
-    } else {
-      // Add constraint if it doesn't exist
-      handleAddConstraint(date, timeSlot)
-    }
+  const getTimeSlotLabel = (timeSlot: 'first' | 'second') => {
+    return timeSlot === 'first' ? '20:00-00:00' : '08:00-12:00'
   }
 
   return (
-    <Box dir="rtl">
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" sx={{ display: 'flex', alignItems: 'center' }}>
-          סימון אילוצים לשבוע הבא
-          <Tooltip title="סמן את המשמרות בהן אתה לא יכול לעבוד">
-            <IconButton size="small" sx={{ ml: 1 }}>
-              <Info />
-            </IconButton>
-          </Tooltip>
-        </Typography>
-      </Box>
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
+        זמינות והעדפות - שבוע הבא
+      </h1>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        <Typography variant="body2">
-          <strong>הוראות:</strong> סמן את המשמרות בהן אתה <strong>לא יכול</strong> לעבוד בשבוע הבא.
-          משמרות לא מסומנות ייחשבו כזמינות שלך לעבודה.
-          <br />
-          <strong>הערה:</strong> ראשון הראשון - רק משמרת ערב (20:00-00:00), ראשון האחרון - רק משמרת בוקר (08:00-12:00).
-          <br />
-          <strong>טיפ:</strong> לחץ על העיפרון כדי להוסיף הסבר לאילוץ.
-        </Typography>
-      </Alert>
+      {/* Week Schedule */}
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#555' }}>סימון אילוצים</h2>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '150px 1fr 1fr', 
+          gap: '10px',
+          border: '1px solid #ddd',
+          borderRadius: '8px',
+          overflow: 'hidden'
+        }}>
+          {/* Header */}
+          <div style={{ 
+            backgroundColor: '#f8f9fa', 
+            padding: '15px', 
+            fontWeight: 'bold',
+            borderRight: '1px solid #ddd'
+          }}>
+            יום
+          </div>
+          <div style={{ 
+            backgroundColor: '#f8f9fa', 
+            padding: '15px', 
+            fontWeight: 'bold',
+            textAlign: 'center',
+            borderRight: '1px solid #ddd'
+          }}>
+            20:00-00:00
+          </div>
+          <div style={{ 
+            backgroundColor: '#f8f9fa', 
+            padding: '15px', 
+            fontWeight: 'bold',
+            textAlign: 'center'
+          }}>
+            08:00-12:00
+          </div>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <TableContainer component={Paper} sx={{ maxWidth: '600px' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', textAlign: 'center', width: '25%', py: 1 }}>יום</TableCell>
-                {timeSlots.map((slot) => (
-                  <TableCell key={slot.id} sx={{ fontWeight: 'bold', textAlign: 'center', width: '37.5%', py: 1 }}>
-                    {slot.label}
-                    <Typography variant="caption" display="block" color="textSecondary">
-                      {slot.description}
-                    </Typography>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-          <TableBody>
-            {nextWeekDates.map((date, index) => {
-              const dateStr = format(date, 'yyyy-MM-dd')
-              const dayName = hebrewDays[index]
-              const dayNumber = format(date, 'dd/MM')
-              const isFirstSunday = index === 0
-              const isLastSunday = index === 7
-              
-              return (
-                <TableRow key={dateStr} hover>
-                  <TableCell sx={{ fontWeight: 'bold' }}>
-                    <Typography variant="body1">{dayName}</Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {dayNumber}
-                    </Typography>
-                  </TableCell>
-                  {timeSlots.map((slot) => {
-                    const isChecked = hasConstraint(dateStr, slot.id)
-                    const constraint = getConstraintForShift(dateStr, slot.id)
-                    
-                    // Hide morning shift for first Sunday
-                    if (isFirstSunday && slot.id === 'first') {
-                      return <TableCell key={slot.id} align="center" sx={{ backgroundColor: '#f5f5f5' }}>
-                        <Typography variant="caption" color="textSecondary">לא זמין</Typography>
-                      </TableCell>
-                    }
-                    
-                    // Hide evening shift for last Sunday
-                    if (isLastSunday && slot.id === 'second') {
-                      return <TableCell key={slot.id} align="center" sx={{ backgroundColor: '#f5f5f5' }}>
-                        <Typography variant="caption" color="textSecondary">לא זמין</Typography>
-                      </TableCell>
-                    }
-                    
-                    return (
-                      <TableCell key={slot.id} align="center">
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-                          <FormControlLabel
-                            control={
-                              <Checkbox
-                                checked={isChecked}
-                                onChange={() => handleToggleConstraint(dateStr, slot.id)}
-                                sx={{
-                                  '&.Mui-checked': {
-                                    color: 'error.main',
-                                  },
-                                }}
-                                size="small"
-                              />
-                            }
-                            label=""
-                          />
-                          {isChecked && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  setConstraintReason(constraint?.reason || '')
-                                  setConstraintDialog({ open: true, date: dateStr, timeSlot: slot.id })
-                                }}
-                                sx={{ p: 0.5 }}
-                              >
-                                <Edit fontSize="small" />
-                              </IconButton>
-                              {constraint?.reason && (
-                                <Chip
-                                  label={constraint.reason}
-                                  onDelete={() => handleRemoveConstraint(constraint.id)}
-                                  size="small"
-                                  color="error"
-                                  variant="outlined"
-                                  icon={<Delete fontSize="small" />}
-                                  sx={{ fontSize: '0.7rem' }}
-                                />
-                              )}
-                            </Box>
-                          )}
-                        </Box>
-                      </TableCell>
-                    )
-                  })}
-                </TableRow>
-              )
-            })}
-                     </TableBody>
-         </Table>
-       </TableContainer>
-       </Box>
+          {/* Days */}
+          {weekDates.map((date, index) => {
+            const dateStr = format(date, 'yyyy-MM-dd')
+            const isSunday = date.getDay() === 0
+            const isLastSunday = isSunday && index === 6
+            
+            return (
+              <React.Fragment key={dateStr}>
+                {/* Day name */}
+                <div style={{ 
+                  padding: '15px', 
+                  backgroundColor: '#f8f9fa',
+                  borderRight: '1px solid #ddd',
+                  borderTop: '1px solid #ddd'
+                }}>
+                  <div style={{ fontWeight: 'bold' }}>
+                    {getDayName(date)}
+                  </div>
+                  <div style={{ fontSize: '0.9em', color: '#666' }}>
+                    {format(date, 'dd/MM', { locale: he })}
+                  </div>
+                </div>
 
-      {/* Preferences Section */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-        <Paper sx={{ p: 2, maxWidth: '500px', width: '100%' }}>
-          <Typography variant="h6" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', fontSize: '1.1rem' }}>
-            העדפות עבודה
-            <Tooltip title="ציין העדפות עבודה כלליות ומיקומים מועדפים">
-              <IconButton size="small" sx={{ ml: 1 }}>
-                <Info />
-              </IconButton>
-            </Tooltip>
-          </Typography>
-          
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* General Notes */}
-            <TextField
-              label="הערות כלליות"
-              multiline
-              rows={2}
-              value={preferences.notes}
-              onChange={(e) => setPreferences({ ...preferences, notes: e.target.value })}
-              placeholder="לדוגמה: אני מעדיף משמרות בוקר, יש לי העדפה לעבוד בסופי שבוע..."
-              fullWidth
-              dir="rtl"
-              size="small"
+                {/* First shift (20:00-00:00) - hidden on first Sunday */}
+                <div style={{ 
+                  padding: '15px',
+                  borderRight: '1px solid #ddd',
+                  borderTop: '1px solid #ddd',
+                  display: isSunday && index === 0 ? 'none' : 'block'
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={constraints[`${dateStr}-first`] || false}
+                      onChange={(e) => handleConstraintChange(dateStr, 'first', e.target.checked)}
+                    />
+                    <span>אילוץ</span>
+                  </label>
+                  {constraints[`${dateStr}-first`] && (
+                    <input
+                      type="text"
+                      placeholder="סיבה לאילוץ"
+                      value={reasons[`${dateStr}-first`] || ''}
+                      onChange={(e) => handleReasonChange(dateStr, 'first', e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '10px',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px'
+                      }}
+                    />
+                  )}
+                </div>
+
+                {/* Second shift (08:00-12:00) - hidden on last Sunday */}
+                <div style={{ 
+                  padding: '15px',
+                  borderTop: '1px solid #ddd',
+                  display: isLastSunday ? 'none' : 'block'
+                }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={constraints[`${dateStr}-second`] || false}
+                      onChange={(e) => handleConstraintChange(dateStr, 'second', e.target.checked)}
+                    />
+                    <span>אילוץ</span>
+                  </label>
+                  {constraints[`${dateStr}-second`] && (
+                    <input
+                      type="text"
+                      placeholder="סיבה לאילוץ"
+                      value={reasons[`${dateStr}-second`] || ''}
+                      onChange={(e) => handleReasonChange(dateStr, 'second', e.target.value)}
+                      style={{
+                        width: '100%',
+                        marginTop: '10px',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '4px'
+                      }}
+                    />
+                  )}
+                </div>
+              </React.Fragment>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* General Notes */}
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#555' }}>הערות כלליות</h2>
+        <textarea
+          value={generalNotes}
+          onChange={(e) => setGeneralNotes(e.target.value)}
+          placeholder="הערות כלליות על הזמינות שלך..."
+          style={{
+            width: '100%',
+            minHeight: '100px',
+            padding: '15px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            fontSize: '16px',
+            resize: 'vertical'
+          }}
+        />
+      </div>
+
+      {/* Position Preferences */}
+      <div style={{ marginBottom: '30px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#555' }}>העדפות עמדות (עדיפות יורדת)</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              עדיפות ראשונה
+            </label>
+            <input
+              type="text"
+              value={preferPosition1}
+              onChange={(e) => setPreferPosition1(e.target.value)}
+              placeholder="עמדה א'"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '16px'
+              }}
             />
-            
-            <Divider />
-            
-                         {/* Position Preferences */}
-             <Box>
-               <Typography variant="subtitle2" sx={{ mb: 1 }}>מיקומים מועדפים (לפי סדר עדיפות)</Typography>
-               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-                 <FormControl sx={{ minWidth: 100 }}>
-                   <InputLabel>עדיפות ראשונה</InputLabel>
-                   <Select
-                     value={preferences.preferPosition1}
-                     onChange={(e) => setPreferences({ ...preferences, preferPosition1: e.target.value })}
-                     label="עדיפות ראשונה"
-                     size="small"
-                   >
-                     <MenuItem value="">
-                       <em>בחר מיקום</em>
-                     </MenuItem>
-                     {availablePositions.map((position) => (
-                       <MenuItem key={position} value={position}>{position}</MenuItem>
-                     ))}
-                   </Select>
-                 </FormControl>
-                 
-                 <FormControl sx={{ minWidth: 100 }}>
-                   <InputLabel>עדיפות שנייה</InputLabel>
-                   <Select
-                     value={preferences.preferPosition2}
-                     onChange={(e) => setPreferences({ ...preferences, preferPosition2: e.target.value })}
-                     label="עדיפות שנייה"
-                     size="small"
-                   >
-                     <MenuItem value="">
-                       <em>בחר מיקום</em>
-                     </MenuItem>
-                     {availablePositions.map((position) => (
-                       <MenuItem key={position} value={position}>{position}</MenuItem>
-                     ))}
-                   </Select>
-                 </FormControl>
-                 
-                 <FormControl sx={{ minWidth: 100 }}>
-                   <InputLabel>עדיפות שלישית</InputLabel>
-                   <Select
-                     value={preferences.preferPosition3}
-                     onChange={(e) => setPreferences({ ...preferences, preferPosition3: e.target.value })}
-                     label="עדיפות שלישית"
-                     size="small"
-                   >
-                     <MenuItem value="">
-                       <em>בחר מיקום</em>
-                     </MenuItem>
-                     {availablePositions.map((position) => (
-                       <MenuItem key={position} value={position}>{position}</MenuItem>
-                     ))}
-                   </Select>
-                 </FormControl>
-               </Box>
-             </Box>
-          </Box>
-        </Paper>
-      </Box>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              עדיפות שנייה
+            </label>
+            <input
+              type="text"
+              value={preferPosition2}
+              onChange={(e) => setPreferPosition2(e.target.value)}
+              placeholder="עמדה ב'"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '16px'
+              }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              עדיפות שלישית
+            </label>
+            <input
+              type="text"
+              value={preferPosition3}
+              onChange={(e) => setPreferPosition3(e.target.value)}
+              placeholder="עמדה ג'"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #ddd',
+                borderRadius: '6px',
+                fontSize: '16px'
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
-      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mt: 4 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={async () => {
-            if (!user) return
-            
-            try {
-              const existingPreferences = await getPreferences(user.id)
-              if (existingPreferences) {
-                await updatePreference(user.id, {
-                  notes: preferences.notes,
-                  preferPosition1: preferences.preferPosition1,
-                  preferPosition2: preferences.preferPosition2,
-                  preferPosition3: preferences.preferPosition3
-                })
-              } else {
-                await addPreference({
-                  workerId: user.id,
-                  notes: preferences.notes,
-                  preferPosition1: preferences.preferPosition1,
-                  preferPosition2: preferences.preferPosition2,
-                  preferPosition3: preferences.preferPosition3
-                })
-              }
-              
-              console.log('Successfully saved to Firebase for cross-device sync')
-              toast.success('הזמינות והעדפות נשמרו בהצלחה!')
-            } catch (error) {
-              console.error('Failed to save preferences:', error)
-              toast.error('שגיאה בשמירת ההעדפות')
-            }
+      {/* Save Button */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <button
+          onClick={handleSave}
+          disabled={isSubmitting}
+          style={{
+            padding: '15px 40px',
+            fontSize: '18px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            opacity: isSubmitting ? 0.6 : 1
           }}
         >
-          שמור זמינות והעדפות
-        </Button>
-        <Button
-          variant="outlined"
-          onClick={() => navigate(-1)}
-        >
-          חזור
-        </Button>
-      </Box>
+          {isSubmitting ? 'שומר...' : 'שמור זמינות והעדפות'}
+        </button>
+      </div>
 
-      {/* Note Dialog */}
-      <Dialog open={constraintDialog.open} onClose={handleConstraintCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>הוסף הסבר לאילוץ</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="הסבר מדוע אינך יכול לעבוד במשמרת זו"
-            fullWidth
-            multiline
-            rows={3}
-            value={constraintReason}
-            onChange={(e) => setConstraintReason(e.target.value)}
-            placeholder="לדוגמה: יש לי פגישה רפואית, אני בחופשה, יש לי אירוע משפחתי..."
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleConstraintCancel}>ביטול</Button>
-          <Button onClick={handleConstraintSave} variant="contained">שמור</Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      {/* Message */}
+      {message && (
+        <div style={{
+          textAlign: 'center',
+          padding: '15px',
+          marginBottom: '20px',
+          borderRadius: '8px',
+          backgroundColor: message.includes('שגיאה') ? '#f8d7da' : '#d4edda',
+          color: message.includes('שגיאה') ? '#721c24' : '#155724',
+          border: `1px solid ${message.includes('שגיאה') ? '#f5c6cb' : '#c3e6cb'}`
+        }}>
+          {message}
+        </div>
+      )}
+    </div>
   )
-} 
+}
+
+export default Availability 

@@ -1,14 +1,11 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useFirebaseStore } from '../stores/firebaseStore'
-import { Box, TextField, Button, Typography, Paper, Container } from '@mui/material'
+import React, { useState } from 'react'
+import { useNeonStore } from '../stores/neonStore'
 
-export default function Login() {
+const Login: React.FC = () => {
   const [userId, setUserId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const navigate = useNavigate()
-  const { login } = useFirebaseStore()
+  const { login } = useNeonStore()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,65 +17,96 @@ export default function Login() {
     try {
       const user = await login(userId)
       if (user) {
-        if (user.role === 'manager') {
-          navigate('/manager')
-        } else {
-          navigate('/availability')
-        }
+        // Store user ID in localStorage for persistence
+        localStorage.setItem('userId', userId)
+        // No need to navigate - App.tsx will handle routing
       } else {
-        setError('משתמש לא נמצא')
+        setError('מזהה משתמש לא תקין')
       }
     } catch (err) {
       setError('שגיאה בהתחברות')
+      console.error('Login error:', err)
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <Paper sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            התחברות למערכת ניהול משמרות
-          </Typography>
-          
-          <Box component="form" onSubmit={handleLogin} sx={{ mt: 3 }}>
-            <TextField
-              fullWidth
-              label="מספר אישי"
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      backgroundColor: '#f5f5f5'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '2rem',
+        borderRadius: '8px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        textAlign: 'center',
+        minWidth: '300px'
+      }}>
+        <h1 style={{ marginBottom: '2rem', color: '#333' }}>התחברות למערכת</h1>
+        
+        <form onSubmit={handleLogin}>
+          <div style={{ marginBottom: '1rem' }}>
+            <input
+              type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              margin="normal"
-              required
-              autoFocus
-              dir="rtl"
-            />
-            
-            {error && (
-              <Typography color="error" align="center" sx={{ mt: 2 }}>
-                {error}
-              </Typography>
-            )}
-            
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              placeholder="הכנס מספר אישי"
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '1rem'
+              }}
               disabled={isLoading}
-            >
-              {isLoading ? 'מתחבר...' : 'התחבר'}
-            </Button>
-            
-            <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-              מנהל: הכנס 0
-              <br />
-              עובד: הכנס מספר אישי
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={isLoading || !userId.trim()}
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '1rem',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              opacity: isLoading ? 0.6 : 1
+            }}
+          >
+            {isLoading ? 'מתחבר...' : 'התחבר'}
+          </button>
+        </form>
+        
+        {error && (
+          <div style={{
+            marginTop: '1rem',
+            color: '#dc3545',
+            fontSize: '0.9rem'
+          }}>
+            {error}
+          </div>
+        )}
+        
+        <div style={{
+          marginTop: '2rem',
+          fontSize: '0.9rem',
+          color: '#666'
+        }}>
+          <p>מנהל: הכנס 0</p>
+          <p>עובד: הכנס מספר אישי</p>
+        </div>
+      </div>
+    </div>
   )
-} 
+}
+
+export default Login 
