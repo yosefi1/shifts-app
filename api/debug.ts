@@ -6,10 +6,17 @@ export default async function handler(req: any, res: any) {
       key.includes('DATABASE') || 
       key.includes('POSTGRES') || 
       key.includes('PG') ||
-      key.includes('NEON')
+      key.includes('NEON') ||
+      key.includes('DB')
     )
     
     const databaseValues = databaseRelatedVars.reduce((acc, key) => {
+      acc[key] = allEnvVars[key] ? 'SET' : 'NOT_SET'
+      return acc
+    }, {} as Record<string, string>)
+
+    // Show first few environment variables for debugging
+    const firstFewVars = Object.keys(allEnvVars).slice(0, 20).reduce((acc, key) => {
       acc[key] = allEnvVars[key] ? 'SET' : 'NOT_SET'
       return acc
     }, {} as Record<string, string>)
@@ -22,6 +29,7 @@ export default async function handler(req: any, res: any) {
       message: 'Debug API working',
       totalEnvVars: Object.keys(allEnvVars).length,
       databaseRelatedVars: databaseValues,
+      firstFewVars: firstFewVars,
       hasDatabaseUrl: !!process.env.DATABASE_URL,
       hasViteDatabaseUrl: !!process.env.VITE_DATABASE_URL,
       nodeEnv: process.env.NODE_ENV,
