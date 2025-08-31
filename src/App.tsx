@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { useNeonStore } from './stores/neonStore'
+import { useSupabaseAuthStore } from './stores/supabaseAuthStore'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -12,13 +12,18 @@ import Availability from './pages/Availability'
 import Constraints from './pages/Constraints'
 
 function App() {
-  const { currentUser, login, initialize } = useNeonStore()
+  const { user, checkSession, login } = useSupabaseAuthStore()
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const initApp = async () => {
       try {
-        await initialize()
+        // Check for existing session
+        const sessionUser = await checkSession()
+        if (sessionUser) {
+          // User is already logged in
+          return
+        }
         
         // Check for stored user ID in localStorage
         const storedUserId = localStorage.getItem('userId')
@@ -33,7 +38,7 @@ function App() {
     }
 
     initApp()
-  }, [initialize, login])
+  }, [checkSession, login])
 
   if (isLoading) {
     return (
@@ -49,7 +54,7 @@ function App() {
     )
   }
 
-  if (!currentUser) {
+  if (!user) {
     return <Login />
   }
 
@@ -59,14 +64,14 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={
-            currentUser.role === 'manager' ? <ManagerDashboard /> : <Dashboard />
+            user.role === 'manager' ? <ManagerDashboard /> : <Dashboard />
           } />
           <Route path="/manager-dashboard" element={
-            currentUser.role === 'manager' ? <ManagerDashboardNew /> : <Navigate to="/dashboard" replace />
+            user.role === 'manager' ? <ManagerDashboardNew /> : <Navigate to="/dashboard" replace />
           } />
           <Route path="/shifts" element={<Shifts />} />
           <Route path="/workers" element={
-            currentUser.role === 'manager' ? <Workers /> : <Navigate to="/dashboard" replace />
+            user.role === 'manager' ? <Workers /> : <Navigate to="/dashboard" replace />
           } />
           <Route path="/availability" element={<Availability />} />
           <Route path="/constraints" element={<Constraints />} />

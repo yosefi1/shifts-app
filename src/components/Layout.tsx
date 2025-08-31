@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useNeonStore } from '../stores/neonStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { Schedule, People, Dashboard, ExitToApp } from '@mui/icons-material'
 
 interface LayoutProps {
@@ -8,7 +8,7 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { currentUser } = useNeonStore()
+  const { user } = useSupabaseAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -17,7 +17,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     window.location.reload() // Simple way to reset the app state
   }
 
-  const menuItems = currentUser?.role === 'manager' ? [
+  const menuItems = user?.role === 'manager' ? [
     { text: 'דשבורד', icon: <Dashboard />, path: '/dashboard' },
     { text: 'ניהול שיבוצים', icon: <Schedule />, path: '/manager-dashboard' },
     { text: 'עובדים', icon: <People />, path: '/workers' },
@@ -46,10 +46,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           marginBottom: '20px'
         }}>
           <div style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '5px' }}>
-            {currentUser?.name}
+            {user?.name}
           </div>
           <div style={{ fontSize: '14px', color: '#bdc3c7' }}>
-            {currentUser?.role === 'manager' ? 'מנהל' : 'עובד'}
+            {user?.role === 'manager' ? 'מנהל' : 'עובד'}
           </div>
         </div>
 
@@ -101,7 +101,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+      <div style={{ flex: 1, padding: '20px', backgroundColor: '#f5f6fa' }}>
         {children}
       </div>
     </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { useNeonStore } from '../stores/neonStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 
 const Workers: React.FC = () => {
-  const { users, getAllUsers, addWorker, updateWorker, removeWorker } = useNeonStore()
+  const { getAllUsers, addWorker, updateWorker, removeWorker } = useSupabaseAuthStore()
+  const [users, setUsers] = useState<any[]>([])
   const [isAddingWorker, setIsAddingWorker] = useState(false)
   const [editingWorker, setEditingWorker] = useState<string | null>(null)
   const [newWorker, setNewWorker] = useState<{
@@ -21,8 +22,17 @@ const Workers: React.FC = () => {
   const [message, setMessage] = useState('')
 
   useEffect(() => {
-    getAllUsers()
-  }, [getAllUsers])
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    try {
+      const allUsers = await getAllUsers()
+      setUsers(allUsers)
+    } catch (error) {
+      console.error('Error loading users:', error)
+    }
+  }
 
   const handleAddWorker = async () => {
     if (!newWorker.id || !newWorker.name) {
@@ -31,15 +41,11 @@ const Workers: React.FC = () => {
     }
 
     try {
-      const success = await addWorker(newWorker)
-      if (success) {
-        setMessage('עובד נוסף בהצלחה!')
-        setNewWorker({ id: '', name: '', role: 'worker', gender: 'male', keepShabbat: true })
-        setIsAddingWorker(false)
-        getAllUsers() // Refresh the list
-      } else {
-        setMessage('שגיאה בהוספת עובד')
-      }
+      await addWorker(newWorker)
+      setMessage('עובד נוסף בהצלחה!')
+      setNewWorker({ id: '', name: '', role: 'worker', gender: 'male', keepShabbat: true })
+      setIsAddingWorker(false)
+      loadUsers() // Refresh the list
     } catch (error) {
       console.error('Error adding worker:', error)
       setMessage('שגיאה בהוספת עובד')
@@ -48,14 +54,10 @@ const Workers: React.FC = () => {
 
   const handleUpdateWorker = async (userId: string, updates: Partial<typeof newWorker>) => {
     try {
-      const success = await updateWorker(userId, updates)
-      if (success) {
-        setMessage('עובד עודכן בהצלחה!')
-        setEditingWorker(null)
-        getAllUsers() // Refresh the list
-      } else {
-        setMessage('שגיאה בעדכון עובד')
-      }
+      await updateWorker(userId, updates)
+      setMessage('עובד עודכן בהצלחה!')
+      setEditingWorker(null)
+      loadUsers() // Refresh the list
     } catch (error) {
       console.error('Error updating worker:', error)
       setMessage('שגיאה בעדכון עובד')
@@ -70,13 +72,9 @@ const Workers: React.FC = () => {
 
     if (window.confirm('האם אתה בטוח שברצונך למחוק עובד זה?')) {
       try {
-        const success = await removeWorker(userId)
-        if (success) {
-          setMessage('עובד הוסר בהצלחה!')
-          getAllUsers() // Refresh the list
-        } else {
-          setMessage('שגיאה בהסרת עובד')
-        }
+        await removeWorker(userId)
+        setMessage('עובד הוסר בהצלחה!')
+        loadUsers() // Refresh the list
       } catch (error) {
         console.error('Error removing worker:', error)
         setMessage('שגיאה בהסרת עובד')

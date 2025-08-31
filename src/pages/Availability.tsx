@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { useNeonStore } from '../stores/neonStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 import { format, startOfWeek, addDays } from 'date-fns'
 import { he } from 'date-fns/locale'
 
 const Availability: React.FC = () => {
-  const { currentUser, addConstraint, getPreferences, addPreference, updatePreference } = useNeonStore()
+  const { user, addConstraint, getPreferences, addPreference, updatePreference } = useSupabaseAuthStore()
   const [constraints, setConstraints] = useState<{[key: string]: boolean}>({})
   const [reasons, setReasons] = useState<{[key: string]: string}>({})
   const [generalNotes, setGeneralNotes] = useState('')
@@ -19,16 +19,16 @@ const Availability: React.FC = () => {
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(nextWeekStart, i))
 
   useEffect(() => {
-    if (currentUser) {
+    if (user) {
       loadExistingPreferences()
     }
-  }, [currentUser])
+  }, [user])
 
   const loadExistingPreferences = async () => {
-    if (!currentUser) return
+    if (!user) return
     
     try {
-      const preferences = await getPreferences(currentUser.id)
+      const preferences = await getPreferences(user.id)
       if (preferences) {
         setGeneralNotes(preferences.notes || '')
         setPreferPosition1(preferences.preferPosition1 || '')
@@ -59,7 +59,7 @@ const Availability: React.FC = () => {
   }
 
   const handleSave = async () => {
-    if (!currentUser) return
+    if (!user) return
     
     setIsSubmitting(true)
     setMessage('')
@@ -72,7 +72,7 @@ const Availability: React.FC = () => {
           const reason = reasons[key] || 'אילוץ אישי'
           
           await addConstraint({
-            workerId: currentUser.id,
+            workerId: user.id,
             date,
             timeSlot: timeSlot as 'first' | 'second',
             reason,
@@ -82,10 +82,10 @@ const Availability: React.FC = () => {
       }
 
       // Save preferences
-      const existingPreferences = await getPreferences(currentUser.id)
+      const existingPreferences = await getPreferences(user.id)
       
       if (existingPreferences) {
-        await updatePreference(currentUser.id, {
+        await updatePreference(user.id, {
           notes: generalNotes,
           preferPosition1,
           preferPosition2,
@@ -93,7 +93,7 @@ const Availability: React.FC = () => {
         })
       } else {
         await addPreference({
-          workerId: currentUser.id,
+          workerId: user.id,
           notes: generalNotes,
           preferPosition1,
           preferPosition2,
@@ -101,123 +101,71 @@ const Availability: React.FC = () => {
         })
       }
 
-      setMessage('הזמינות וההעדפות נשמרו בהצלחה!')
-      
-      // Clear form after successful save
-      setTimeout(() => {
-        setConstraints({})
-        setReasons({})
-        setGeneralNotes('')
-        setPreferPosition1('')
-        setPreferPosition2('')
-        setPreferPosition3('')
-        setMessage('')
-      }, 2000)
-
+      setMessage('הנתונים נשמרו בהצלחה!')
     } catch (error) {
-      console.error('Error saving preferences:', error)
-      setMessage('שגיאה בשמירת ההעדפות')
+      setMessage('שגיאה בשמירת הנתונים')
+      console.error('Save error:', error)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const getDayName = (date: Date) => {
-    const dayNames = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
-    return dayNames[date.getDay()]
+  if (!user) {
+    return <div>טוען...</div>
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '30px', color: '#333' }}>
-        זמינות והעדפות - שבוע הבא
-      </h1>
-
-      {/* Week Schedule */}
-      <div style={{ marginBottom: '30px' }}>
-        <h2 style={{ marginBottom: '20px', color: '#555' }}>סימון אילוצים</h2>
+    <div style={{ padding: '20px' }}>
+      <h1 style={{ marginBottom: '30px', textAlign: 'center' }}>הגשת אילוצים והעדפות</h1>
+      
+      {/* Constraints Section */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#2c3e50' }}>אילוצים לשבוע הבא</h2>
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: '150px 1fr 1fr', 
-          gap: '10px',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          overflow: 'hidden'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+          gap: '20px' 
         }}>
-          {/* Header */}
-          <div style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '15px', 
-            fontWeight: 'bold',
-            borderRight: '1px solid #ddd'
-          }}>
-            יום
-          </div>
-          <div style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '15px', 
-            fontWeight: 'bold',
-            textAlign: 'center',
-            borderRight: '1px solid #ddd'
-          }}>
-            20:00-00:00
-          </div>
-          <div style={{ 
-            backgroundColor: '#f8f9fa', 
-            padding: '15px', 
-            fontWeight: 'bold',
-            textAlign: 'center'
-          }}>
-            08:00-12:00
-          </div>
-
-          {/* Days */}
-          {weekDates.map((date, index) => {
-            const dateStr = format(date, 'yyyy-MM-dd')
-            const isSunday = date.getDay() === 0
-            const isLastSunday = isSunday && index === 6
-            
-            return (
-              <React.Fragment key={dateStr}>
-                {/* Day name */}
-                <div style={{ 
-                  padding: '15px', 
-                  backgroundColor: '#f8f9fa',
-                  borderRight: '1px solid #ddd',
-                  borderTop: '1px solid #ddd'
-                }}>
-                  <div style={{ fontWeight: 'bold' }}>
-                    {getDayName(date)}
-                  </div>
-                  <div style={{ fontSize: '0.9em', color: '#666' }}>
-                    {format(date, 'dd/MM', { locale: he })}
-                  </div>
-                </div>
-
-                {/* First shift (20:00-00:00) - hidden on first Sunday */}
-                <div style={{ 
-                  padding: '15px',
-                  borderRight: '1px solid #ddd',
-                  borderTop: '1px solid #ddd',
-                  display: isSunday && index === 0 ? 'none' : 'block'
-                }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="checkbox"
-                      checked={constraints[`${dateStr}-first`] || false}
-                      onChange={(e) => handleConstraintChange(dateStr, 'first', e.target.checked)}
-                    />
-                    <span>אילוץ</span>
+          {weekDates.map((date) => (
+            <div key={date.toISOString()} style={{
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              padding: '20px',
+              backgroundColor: 'white'
+            }}>
+              <h3 style={{ 
+                marginBottom: '15px', 
+                textAlign: 'center',
+                color: '#34495e'
+              }}>
+                {format(date, 'EEEE', { locale: he })}
+                <br />
+                <span style={{ fontSize: '0.9em', color: '#7f8c8d' }}>
+                  {format(date, 'dd/MM/yyyy')}
+                </span>
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                {/* First Shift */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id={`${date.toISOString()}-first`}
+                    checked={constraints[`${date.toISOString()}-first`] || false}
+                    onChange={(e) => handleConstraintChange(date.toISOString(), 'first', e.target.checked)}
+                    style={{ transform: 'scale(1.2)' }}
+                  />
+                  <label htmlFor={`${date.toISOString()}-first`} style={{ flex: 1 }}>
+                    משמרת ראשונה (08:00-12:00)
                   </label>
-                  {constraints[`${dateStr}-first`] && (
+                  {constraints[`${date.toISOString()}-first`] && (
                     <input
                       type="text"
-                      placeholder="סיבה לאילוץ"
-                      value={reasons[`${dateStr}-first`] || ''}
-                      onChange={(e) => handleReasonChange(dateStr, 'first', e.target.value)}
+                      placeholder="סיבה"
+                      value={reasons[`${date.toISOString()}-first`] || ''}
+                      onChange={(e) => handleReasonChange(date.toISOString(), 'first', e.target.value)}
                       style={{
-                        width: '100%',
-                        marginTop: '10px',
+                        flex: 1,
                         padding: '8px',
                         border: '1px solid #ddd',
                         borderRadius: '4px'
@@ -225,30 +173,27 @@ const Availability: React.FC = () => {
                     />
                   )}
                 </div>
-
-                {/* Second shift (08:00-12:00) - hidden on last Sunday */}
-                <div style={{ 
-                  padding: '15px',
-                  borderTop: '1px solid #ddd',
-                  display: isLastSunday ? 'none' : 'block'
-                }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input
-                      type="checkbox"
-                      checked={constraints[`${dateStr}-second`] || false}
-                      onChange={(e) => handleConstraintChange(dateStr, 'second', e.target.checked)}
-                    />
-                    <span>אילוץ</span>
+                
+                {/* Second Shift */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id={`${date.toISOString()}-second`}
+                    checked={constraints[`${date.toISOString()}-first`] || false}
+                    onChange={(e) => handleConstraintChange(date.toISOString(), 'second', e.target.checked)}
+                    style={{ transform: 'scale(1.2)' }}
+                  />
+                  <label htmlFor={`${date.toISOString()}-second`} style={{ flex: 1 }}>
+                    משמרת שנייה (20:00-00:00)
                   </label>
-                  {constraints[`${dateStr}-second`] && (
+                  {constraints[`${date.toISOString()}-second`] && (
                     <input
                       type="text"
-                      placeholder="סיבה לאילוץ"
-                      value={reasons[`${dateStr}-second`] || ''}
-                      onChange={(e) => handleReasonChange(dateStr, 'second', e.target.value)}
+                      placeholder="סיבה"
+                      value={reasons[`${date.toISOString()}-second`] || ''}
+                      onChange={(e) => handleReasonChange(date.toISOString(), 'second', e.target.value)}
                       style={{
-                        width: '100%',
-                        marginTop: '10px',
+                        flex: 1,
                         padding: '8px',
                         border: '1px solid #ddd',
                         borderRadius: '4px'
@@ -256,86 +201,94 @@ const Availability: React.FC = () => {
                     />
                   )}
                 </div>
-              </React.Fragment>
-            )
-          })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* General Notes */}
-      <div style={{ marginBottom: '30px' }}>
-        <h2 style={{ marginBottom: '20px', color: '#555' }}>הערות כלליות</h2>
-        <textarea
-          value={generalNotes}
-          onChange={(e) => setGeneralNotes(e.target.value)}
-          placeholder="הערות כלליות על הזמינות שלך..."
-          style={{
-            width: '100%',
-            minHeight: '100px',
-            padding: '15px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '16px',
-            resize: 'vertical'
-          }}
-        />
-      </div>
+      {/* Preferences Section */}
+      <div style={{ marginBottom: '40px' }}>
+        <h2 style={{ marginBottom: '20px', color: '#2c3e50' }}>העדפות כלליות</h2>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+            הערות כלליות:
+          </label>
+          <textarea
+            value={generalNotes}
+            onChange={(e) => setGeneralNotes(e.target.value)}
+            placeholder="הכנס הערות כלליות..."
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+              resize: 'vertical'
+            }}
+          />
+        </div>
 
-      {/* Position Preferences */}
-      <div style={{ marginBottom: '30px' }}>
-        <h2 style={{ marginBottom: '20px', color: '#555' }}>העדפות עמדות (עדיפות יורדת)</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+          gap: '20px' 
+        }}>
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              עדיפות ראשונה
+              עמדה מועדפת ראשונה:
             </label>
             <input
               type="text"
               value={preferPosition1}
               onChange={(e) => setPreferPosition1(e.target.value)}
-              placeholder="עמדה א'"
+              placeholder="עמדה מועדפת ראשונה"
               style={{
                 width: '100%',
                 padding: '12px',
                 border: '1px solid #ddd',
-                borderRadius: '6px',
-                fontSize: '16px'
+                borderRadius: '4px',
+                fontSize: '14px'
               }}
             />
           </div>
+
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              עדיפות שנייה
+              עמדה מועדפת שנייה:
             </label>
             <input
               type="text"
               value={preferPosition2}
               onChange={(e) => setPreferPosition2(e.target.value)}
-              placeholder="עמדה ב'"
+              placeholder="עמדה מועדפת שנייה"
               style={{
                 width: '100%',
                 padding: '12px',
                 border: '1px solid #ddd',
-                borderRadius: '6px',
-                fontSize: '16px'
+                borderRadius: '4px',
+                fontSize: '14px'
               }}
             />
           </div>
+
           <div>
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-              עדיפות שלישית
+              עמדה מועדפת שלישית:
             </label>
             <input
               type="text"
               value={preferPosition3}
               onChange={(e) => setPreferPosition3(e.target.value)}
-              placeholder="עמדה ג'"
+              placeholder="עמדה מועדפת שלישית"
               style={{
                 width: '100%',
                 padding: '12px',
                 border: '1px solid #ddd',
-                borderRadius: '6px',
-                fontSize: '16px'
+                borderRadius: '4px',
+                fontSize: '14px'
               }}
             />
           </div>
@@ -343,14 +296,14 @@ const Availability: React.FC = () => {
       </div>
 
       {/* Save Button */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+      <div style={{ textAlign: 'center' }}>
         <button
           onClick={handleSave}
           disabled={isSubmitting}
           style={{
             padding: '15px 40px',
-            fontSize: '18px',
-            backgroundColor: '#28a745',
+            fontSize: '16px',
+            backgroundColor: '#27ae60',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -358,17 +311,17 @@ const Availability: React.FC = () => {
             opacity: isSubmitting ? 0.6 : 1
           }}
         >
-          {isSubmitting ? 'שומר...' : 'שמור זמינות והעדפות'}
+          {isSubmitting ? 'שומר...' : 'שמור אילוצים והעדפות'}
         </button>
       </div>
 
       {/* Message */}
       {message && (
         <div style={{
-          textAlign: 'center',
+          marginTop: '20px',
           padding: '15px',
-          marginBottom: '20px',
           borderRadius: '8px',
+          textAlign: 'center',
           backgroundColor: message.includes('שגיאה') ? '#f8d7da' : '#d4edda',
           color: message.includes('שגיאה') ? '#721c24' : '#155724',
           border: `1px solid ${message.includes('שגיאה') ? '#f5c6cb' : '#c3e6cb'}`

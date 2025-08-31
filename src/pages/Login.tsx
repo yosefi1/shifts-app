@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
-import { useNeonStore } from '../stores/neonStore'
+import { useSupabaseAuthStore } from '../stores/supabaseAuthStore'
 
 const Login: React.FC = () => {
   const [userId, setUserId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const { login } = useNeonStore()
+  const { login } = useSupabaseAuthStore()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,8 +101,10 @@ const Login: React.FC = () => {
           fontSize: '0.9rem',
           color: '#666'
         }}>
-          <p>מנהל: הכנס 0</p>
-          <p>עובד: הכנס מספר אישי</p>
+          <p>מספרים אישיים לבדיקה:</p>
+          <p><strong>0</strong> - מנהל</p>
+          <p><strong>8863762</strong> - עובד</p>
+          <p><strong>1234567</strong> - עובד</p>
         </div>
       </div>
     </div>
